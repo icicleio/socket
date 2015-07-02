@@ -1,0 +1,44 @@
+{
+    "name": "icicleio/socket",
+    "description": "Asynchronous stream socket server and client for Icicle.",
+    "keywords": [
+        "asynchronous",
+        "async",
+        "stream",
+        "socket",
+        "server",
+        "client"
+    ],
+    "homepage": "http://icicle.io",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Aaron Piotrowski",
+            "email": "aaron@icicle.io"
+        }
+    ],
+    "require": {
+        "icicleio/stream": "^0.1 || ^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.6"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev",
+            "dev-development": "2.1.x-dev",
+            "dev-v1.x": "1.x-dev",
+            "dev-v0.1.x": "0.1.x-dev"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Icicle\\Socket\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Icicle\\Tests\\Socket\\": "tests"
+        }
+    }
+}
