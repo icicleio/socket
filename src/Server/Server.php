@@ -8,6 +8,7 @@ use Icicle\Promise\Deferred;
 use Icicle\Socket\Client\Client;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
+use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Socket\Socket;
 
@@ -48,7 +49,7 @@ class Server extends Socket implements ServerInterface
         
         try {
             list($this->address, $this->port) = $this->getName(false);
-        } catch (Exception $exception) {
+        } catch (FailureException $exception) {
             $this->free($exception);
         }
     }

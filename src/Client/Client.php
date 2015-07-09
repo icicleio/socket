@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Socket\Client;
 
-use Exception;
 use Icicle\Socket\Stream\DuplexStream;
 use Icicle\Socket\Exception\FailureException;
 
@@ -42,7 +41,7 @@ class Client extends DuplexStream implements ClientInterface
         try {
             list($this->remoteAddress, $this->remotePort) = $this->getName(true);
             list($this->localAddress, $this->localPort) = $this->getName(false);
-        } catch (Exception $exception) {
+        } catch (FailureException $exception) {
             $this->free($exception);
         }
     }

@@ -72,7 +72,7 @@ class Datagram extends Socket implements DatagramInterface
         
         try {
             list($this->address, $this->port) = $this->getName(false);
-        } catch (Exception $exception) {
+        } catch (FailureException $exception) {
             $this->free($exception);
         }
     }
