@@ -78,7 +78,7 @@ class ServerTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
         
         Loop\run();
 
@@ -170,7 +170,7 @@ class ServerTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise1->done($callback, $this->createCallback(0));
+        $promise1->done($callback);
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -210,7 +210,7 @@ class ServerTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
         
         Loop\run();
     }

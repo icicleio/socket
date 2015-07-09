@@ -111,7 +111,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -144,7 +144,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -222,7 +222,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise1->done($callback, $this->createCallback(0));
+        $promise1->done($callback);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -266,7 +266,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(substr(self::WRITE_STRING, 0, $length), $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -302,7 +302,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -352,7 +352,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -402,7 +402,7 @@ class DatagramTest extends TestCase
                 $this->assertSame(self::WRITE_STRING, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -424,7 +424,7 @@ class DatagramTest extends TestCase
                 $this->assertSame($string, $message);
             }));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -470,7 +470,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($string)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -507,7 +507,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($string)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -544,7 +544,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($string)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -594,7 +594,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(0));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -604,7 +604,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -646,7 +646,7 @@ class DatagramTest extends TestCase
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(self::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }

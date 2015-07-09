@@ -169,7 +169,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
         
         $promise->done(function (Client $client) {
             $this->assertTrue($client->isOpen());
@@ -197,7 +197,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
         
         $promise->done(function (Client $client) {
             $this->assertTrue($client->isOpen());
@@ -225,7 +225,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $promise->done(function (Client $client) {
             $this->assertTrue($client->isOpen());
@@ -289,7 +289,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -338,14 +338,14 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new Client($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
-                $coroutine->done($this->createCallback(1), $this->createCallback(0));
+                $coroutine->done($this->createCallback(1));
             })
             ->then(function (Client $client) {
                 return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
@@ -358,7 +358,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -386,14 +386,14 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new Client($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
-                $coroutine->done($this->createCallback(1), $this->createCallback(0));
+                $coroutine->done($this->createCallback(1));
             })
             ->then(function (Client $client) {
                 return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
@@ -434,7 +434,7 @@ class ConnectorTest extends TestCase
         $callback->method('__invoke')
             ->with($this->isInstanceOf(ClientInterface::class));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {

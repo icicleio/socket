@@ -26,7 +26,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($string)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -36,7 +36,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($string));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -76,7 +76,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(0));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -86,7 +86,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $promise = $readable->read(1);
 
@@ -94,7 +94,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo('0'));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -114,7 +114,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $this->assertTrue($writable->isOpen());
 
@@ -124,7 +124,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -197,7 +197,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($buffer)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $this->assertTrue($promise->isPending());
 
@@ -227,7 +227,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $this->assertTrue($promise->isPending());
 
@@ -257,7 +257,7 @@ trait WritableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(0));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $this->assertTrue($promise->isPending());
 

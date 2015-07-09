@@ -125,7 +125,7 @@ class ServerFactoryTest extends TestCase
         $callback->method('__invoke')
                  ->with($this->isInstanceOf(ClientInterface::class));
         
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
         
         Loop\run();
         

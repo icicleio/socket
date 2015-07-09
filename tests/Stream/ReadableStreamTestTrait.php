@@ -31,7 +31,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -93,7 +93,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise1->done($callback, $this->createCallback(0));
+        $promise1->done($callback);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -123,7 +123,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $length)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -133,7 +133,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, $length, $length)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -153,7 +153,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -187,7 +187,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $writable->write(StreamTest::WRITE_STRING);
 
@@ -223,7 +223,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -241,13 +241,13 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen($string)));
 
-        $promise2->done($callback, $this->createCallback(0));
+        $promise2->done($callback);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
             ->with($this->identicalTo($string));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -270,7 +270,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -294,7 +294,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -318,7 +318,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -340,7 +340,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -366,7 +366,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -428,7 +428,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise1->done($callback, $this->createCallback(0));
+        $promise1->done($callback);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -458,7 +458,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $length)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $writable->write(StreamTest::WRITE_STRING);
 
@@ -470,7 +470,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, $length, $offset - $length + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -493,7 +493,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -529,7 +529,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($char));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $writable->write(StreamTest::WRITE_STRING);
 
@@ -580,7 +580,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($string1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -603,7 +603,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, 0, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -613,7 +613,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(substr(StreamTest::WRITE_STRING, $offset + 1)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -648,7 +648,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         $writable->write(StreamTest::WRITE_STRING);
 
@@ -780,7 +780,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -852,7 +852,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -925,7 +925,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($length));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
 
@@ -949,7 +949,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
 
@@ -991,7 +991,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -1026,7 +1026,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($offset + 1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -1062,7 +1062,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($offset + 1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -1121,7 +1121,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($offset + 1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
     }
@@ -1186,7 +1186,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -1258,7 +1258,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -1297,7 +1297,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($length));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
 
@@ -1322,7 +1322,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo($offset - $length + 1));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
 
@@ -1358,7 +1358,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(strlen(StreamTest::WRITE_STRING)));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\tick();
     }
@@ -1569,7 +1569,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run(); // Drain readable buffer.
 
@@ -1579,7 +1579,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(''));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run(); // Should get an empty string.
 
@@ -1609,7 +1609,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(''));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run();
 
@@ -1641,7 +1641,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(StreamTest::WRITE_STRING));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run(); // Drain readable buffer.
 
@@ -1651,7 +1651,7 @@ trait ReadableStreamTestTrait
         $callback->method('__invoke')
             ->with($this->identicalTo(''));
 
-        $promise->done($callback, $this->createCallback(0));
+        $promise->done($callback);
 
         Loop\run(); // Should get an empty string.
 
