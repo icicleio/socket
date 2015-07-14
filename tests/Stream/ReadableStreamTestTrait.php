@@ -264,7 +264,7 @@ trait ReadableStreamTestTrait
         $offset = 5;
         $char = substr(StreamTest::WRITE_STRING, $offset, 1);
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -288,7 +288,7 @@ trait ReadableStreamTestTrait
         $byte = unpack('C', substr(StreamTest::WRITE_STRING, $offset, 1));
         $byte = $byte[1];
 
-        $promise = $readable->read(null, $byte);
+        $promise = $readable->read(0, $byte);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -312,7 +312,7 @@ trait ReadableStreamTestTrait
         $length = 3;
         $string = substr(StreamTest::WRITE_STRING, $offset, $length);
 
-        $promise = $readable->read(null, $string);
+        $promise = $readable->read(0, $string);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -334,7 +334,7 @@ trait ReadableStreamTestTrait
 
         $char = '~';
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -344,7 +344,7 @@ trait ReadableStreamTestTrait
 
         Loop\run();
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         Loop\tick();
 
@@ -360,7 +360,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $promise = $readable->read(null, '');
+        $promise = $readable->read(0, '');
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -382,7 +382,7 @@ trait ReadableStreamTestTrait
 
         $this->assertFalse($readable->isReadable());
 
-        $promise = $readable->read(null, "\0");
+        $promise = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -400,7 +400,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $readable->read(null, "\0");
+        $promise = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -420,9 +420,9 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise1 = $readable->read(null, "\0");
+        $promise1 = $readable->read(0, "\0");
 
-        $promise2 = $readable->read(null, "\0");
+        $promise2 = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -464,7 +464,7 @@ trait ReadableStreamTestTrait
 
         Loop\run();
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -509,7 +509,7 @@ trait ReadableStreamTestTrait
 
         $char = substr(StreamTest::WRITE_STRING, 0, 1);
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $promise->cancel($exception);
 
@@ -521,7 +521,7 @@ trait ReadableStreamTestTrait
 
         Loop\run();
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $this->assertTrue($promise->isPending());
 
@@ -543,7 +543,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $readable->read(null, "\n"); // Nothing to read on this stream.
+        $promise = $readable->read(0, "\n"); // Nothing to read on this stream.
 
         Loop\tick();
 
@@ -565,7 +565,7 @@ trait ReadableStreamTestTrait
 
         Loop\run();
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         Loop\tick();
 
@@ -597,7 +597,7 @@ trait ReadableStreamTestTrait
         $offset = 5;
         $char = substr(StreamTest::WRITE_STRING, $offset, 1);
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -630,7 +630,7 @@ trait ReadableStreamTestTrait
         $offset = 5;
         $char = substr(StreamTest::WRITE_STRING, $offset, 1);
 
-        $promise = $readable->read(null, $char);
+        $promise = $readable->read(0, $char);
 
         $promise->cancel($exception);
 
@@ -1370,7 +1370,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $readable->read(null, null, StreamTest::TIMEOUT);
+        $promise = $readable->read(0, null, StreamTest::TIMEOUT);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -1388,7 +1388,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $readable->read(null, "\0", StreamTest::TIMEOUT);
+        $promise = $readable->read(0, "\0", StreamTest::TIMEOUT);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -1635,7 +1635,7 @@ trait ReadableStreamTestTrait
 
         fclose($writable->getResource()); // Close other end of pipe.
 
-        $promise = $readable->read(null, "\0");
+        $promise = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -1645,7 +1645,7 @@ trait ReadableStreamTestTrait
 
         Loop\run(); // Drain readable buffer.
 
-        $promise = $readable->read(null, "\0");
+        $promise = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -1655,7 +1655,7 @@ trait ReadableStreamTestTrait
 
         Loop\run(); // Should get an empty string.
 
-        $promise = $readable->read(null, "\0");
+        $promise = $readable->read(0, "\0");
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
