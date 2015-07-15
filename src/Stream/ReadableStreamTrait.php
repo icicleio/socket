@@ -154,10 +154,10 @@ trait ReadableStreamTrait
      *
      * @resolve string Empty string.
      *
+     * @reject \Icicle\Promise\Exception\TimeoutException If the operation times out.
      * @reject \Icicle\Stream\Exception\BusyError If a read was already pending on the stream.
      * @reject \Icicle\Stream\Exception\UnreadableException If the stream is no longer readable.
      * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
-     * @reject \Icicle\Stream\Exception\TimeoutException If the operation times out.
      */
     protected function poll($timeout = 0)
     {
