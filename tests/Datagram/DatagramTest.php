@@ -436,7 +436,7 @@ class DatagramTest extends TestCase
     {
         $this->datagram = $this->createDatagram();
 
-        $promise = $this->datagram->receive(null, self::TIMEOUT);
+        $promise = $this->datagram->receive(0, self::TIMEOUT);
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
