@@ -6,6 +6,7 @@ use Icicle\Loop;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
 use Icicle\Promise\Exception\TimeoutException;
+use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\SocketInterface;
 use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\ClosedException;
@@ -155,6 +156,7 @@ trait ReadableStreamTrait
      * @resolve string Empty string.
      *
      * @reject \Icicle\Promise\Exception\TimeoutException If the operation times out.
+     * @reject \Icicle\Socket\Exception\FailureException If the stream buffer is not empty.
      * @reject \Icicle\Stream\Exception\BusyError If a read was already pending on the stream.
      * @reject \Icicle\Stream\Exception\UnreadableException If the stream is no longer readable.
      * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
@@ -167,6 +169,10 @@ trait ReadableStreamTrait
 
         if (!$this->isReadable()) {
             return Promise\reject(new UnreadableException('The stream is no longer readable.'));
+        }
+
+        if (!$this->buffer->isEmpty()) {
+            return Promise\reject(new FailureException('Stream buffer is not empty. Perform another read before polling.'));
         }
 
         $this->length = 0;
