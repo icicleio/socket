@@ -7,6 +7,7 @@ use Icicle\Loop;
 use Icicle\Promise;
 use Icicle\Socket\Client\Client;
 use Icicle\Socket\Exception\FailureException;
+use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\UnwritableException;
 use Icicle\Tests\Socket\TestCase;
@@ -17,8 +18,7 @@ class ClientTest extends TestCase
     const PORT = 51337;
     const TIMEOUT = 0.1;
     const CONNECT_TIMEOUT = 1;
-    const CERT_HEADER = '-----BEGIN CERTIFICATE-----';
-    
+
     public function createClient()
     {
         $host = self::HOST_IPv4;
@@ -280,6 +280,43 @@ class ClientTest extends TestCase
      * @medium
      * @depends testEnableCrypto
      */
+    public function testEnableCryptoThenClose()
+    {
+        $path = tempnam(sys_get_temp_dir(), 'Icicle');
+
+        $server = $this->createSecureServer($path);
+
+        $promise = $this->createClient();
+
+        $promise = $promise
+            ->tap(function () use ($server) {
+                $socket = stream_socket_accept($server);
+                $socket = new Client($socket);
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
+                $coroutine->done($this->createCallback(0), $this->createCallback(1));
+            })
+            ->then(function (Client $client) {
+                $promise = new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                Loop\queue([$client, 'close']);
+                return $promise;
+            });
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->isInstanceOf(ClosedException::class));
+
+        $promise->done($this->createCallback(0), $callback);
+
+        Loop\run();
+
+        fclose($server);
+        unlink($path);
+    }
+
+    /**
+     * @medium
+     * @depends testEnableCrypto
+     */
     public function testEnableCryptoAfterEnd()
     {
         $path = tempnam(sys_get_temp_dir(), 'Icicle');
@@ -343,6 +380,45 @@ class ClientTest extends TestCase
         
         Loop\run();
         
+        fclose($server);
+        unlink($path);
+    }
+
+    /**
+     * @medium
+     * @requires extension openssl
+     */
+    public function testEnableCryptoWithNonEmptyStreamBuffer()
+    {
+        $path = tempnam(sys_get_temp_dir(), 'Icicle');
+
+        $server = $this->createSecureServer($path);
+
+        $promise = $this->createClient();
+
+        $promise = $promise
+            ->tap(function () use ($server) {
+                $socket = stream_socket_accept($server);
+                $socket = new Client($socket);
+                $socket->write('Test string');
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
+                $coroutine->done($this->createCallback(0), $this->createCallback(1));
+            })
+            ->tap(function (Client $client) {
+                return $client->read(0, ' ');
+            })
+            ->then(function (Client $client) {
+                return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            });
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->isInstanceOf(FailureException::class));
+
+        $promise->done($this->createCallback(0), $callback);
+
+        Loop\run();
+
         fclose($server);
         unlink($path);
     }
