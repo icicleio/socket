@@ -146,7 +146,7 @@ trait WritableStreamTrait
     /**
      * Returns a promise that is fulfilled when the stream is ready to receive data (output buffer is not full).
      *
-     * @param float|int|null $timeout Number of seconds until the returned promise is rejected with a TimeoutException
+     * @param float|int $timeout Number of seconds until the returned promise is rejected with a TimeoutException
      *     if the data cannot be written to the stream. Use null for no timeout.
      *
      * @return \Icicle\Promise\PromiseInterface

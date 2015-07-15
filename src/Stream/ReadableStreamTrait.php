@@ -11,6 +11,7 @@ use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\UnreadableException;
 use Icicle\Stream\PipeTrait;
+use Icicle\Stream\Structures\Buffer;
 
 trait ReadableStreamTrait
 {
@@ -35,6 +36,11 @@ trait ReadableStreamTrait
      * @var string|null
      */
     private $byte;
+
+    /**
+     * @var \Icicle\Stream\Structures\Buffer
+     */
+    private $buffer;
 
     /**
      * Determines if the stream is still open.
@@ -72,6 +78,7 @@ trait ReadableStreamTrait
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
         
         $this->poll = $this->createPoll($socket);
+        $this->buffer = new Buffer();
     }
     
     /**
@@ -120,7 +127,7 @@ trait ReadableStreamTrait
             return Promise\resolve($data);
         }
 
-        if (feof($resource)) { // Close only if no data was read and at EOF.
+        if ($this->eof($resource)) { // Close only if no data was read and at EOF.
             $this->close();
             return Promise\resolve($data); // Resolve with empty string on EOF.
         }
@@ -136,9 +143,11 @@ trait ReadableStreamTrait
     }
     
     /**
-     * Returns a promise that is fulfilled when there is data available to read, without actually consuming any data.
+     * Returns a promise that is fulfilled when there is data available to read in the internal stream buffer. Note that
+     * this method does not consider data that may be available in the internal buffer. This method should be used to
+     * implement functionality that uses the stream socket resource directly.
      *
-     * @param float|int|null $timeout Number of seconds until the returned promise is rejected with a TimeoutException
+     * @param float|int $timeout Number of seconds until the returned promise is rejected with a TimeoutException
      *     if no data is received. Use null for no timeout.
      *
      * @return \Icicle\Promise\PromiseInterface
@@ -205,7 +214,7 @@ trait ReadableStreamTrait
             $this->deferred->resolve($data);
             $this->deferred = null;
 
-            if ('' === $data && feof($resource)) { // Close only if no data was read and at EOF.
+            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
                 $this->close();
             }
         });
@@ -220,24 +229,24 @@ trait ReadableStreamTrait
      */
     private function fetch($resource)
     {
-        if (null === $this->byte) {
-            return (string) fread($resource, $this->length);
+        if ($this->buffer->isEmpty()) {
+            $this->buffer->push(fread($resource, $this->length));
         }
 
-        $data = '';
-
-        for ($i = 0; $i < $this->length; ++$i) {
-            if (false === ($byte = fgetc($resource))) {
-                return $data;
-            }
-
-            $data .= $byte;
-
-            if ($byte === $this->byte) {
-                return $data;
-            }
+        if (null === $this->byte || false === ($position = $this->buffer->search($this->byte))) {
+            return $this->buffer->remove($this->length);
         }
 
-        return $data;
+        return $this->buffer->remove($position + 1);
+    }
+
+    /**
+     * @param resource $resource
+     *
+     * @return bool
+     */
+    private function eof($resource)
+    {
+        return $this->buffer->isEmpty() && feof($resource);
     }
 }
