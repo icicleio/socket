@@ -236,7 +236,13 @@ trait ReadableStreamTrait
     private function fetch($resource)
     {
         if ($this->buffer->isEmpty()) {
-            $this->buffer->push(fread($resource, $this->length));
+            $data = (string) fread($resource, $this->length);
+
+            if (null === $this->byte) {
+                return $data;
+            }
+
+            $this->buffer->push($data);
         }
 
         if (null === $this->byte || false === ($position = $this->buffer->search($this->byte))) {
