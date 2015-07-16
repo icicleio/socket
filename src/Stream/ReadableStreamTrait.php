@@ -246,10 +246,10 @@ trait ReadableStreamTrait
         }
 
         if (null === $this->byte || false === ($position = $this->buffer->search($this->byte))) {
-            return $this->buffer->remove($this->length);
+            return $this->buffer->shift($this->length);
         }
 
-        return $this->buffer->remove($position + 1);
+        return $this->buffer->shift($position + 1);
     }
 
     /**
