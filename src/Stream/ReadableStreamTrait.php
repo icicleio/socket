@@ -238,7 +238,7 @@ trait ReadableStreamTrait
         if ($this->buffer->isEmpty()) {
             $data = (string) fread($resource, $this->length);
 
-            if (null === $this->byte) {
+            if (null === $this->byte || '' === $data) {
                 return $data;
             }
 
