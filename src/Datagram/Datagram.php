@@ -80,7 +80,7 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function close(Exception $exception = null)
+    public function close()
     {
         $this->free();
     }
