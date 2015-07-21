@@ -1,8 +1,7 @@
 <?php
 namespace Icicle\Socket\Server;
 
-use Icicle\Socket\Exception\InvalidArgumentError;
-use Icicle\Socket\Exception\FailureException;
+use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
 use Icicle\Socket\ParserTrait;
 
 class ServerFactory implements ServerFactoryInterface

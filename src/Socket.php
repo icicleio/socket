@@ -1,8 +1,7 @@
 <?php
 namespace Icicle\Socket;
 
-use Icicle\Socket\Exception\InvalidArgumentError;
-use Icicle\Socket\Exception\FailureException;
+use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
 
 abstract class Socket implements SocketInterface
 {

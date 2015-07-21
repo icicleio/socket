@@ -4,13 +4,9 @@ namespace Icicle\Socket\Stream;
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
-use Icicle\Promise\Deferred;
-use Icicle\Promise\PromiseInterface;
-use Icicle\Promise\Exception\TimeoutException;
-use Icicle\Socket\Exception\FailureException;
-use Icicle\Socket\SocketInterface;
-use Icicle\Stream\Exception\ClosedException;
-use Icicle\Stream\Exception\UnwritableException;
+use Icicle\Promise\{Deferred, Exception\TimeoutException, PromiseInterface};
+use Icicle\Socket\{Exception\FailureException, SocketInterface};
+use Icicle\Stream\Exception\{ClosedException, UnwritableException};
 use Icicle\Stream\Structures\Buffer;
 use Throwable;
 

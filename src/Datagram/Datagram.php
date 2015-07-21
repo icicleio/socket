@@ -4,16 +4,10 @@ namespace Icicle\Socket\Datagram;
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
-use Icicle\Promise\Deferred;
-use Icicle\Promise\PromiseInterface;
-use Icicle\Promise\Exception\TimeoutException;
-use Icicle\Socket\Exception\BusyError;
-use Icicle\Socket\Exception\ClosedException;
-use Icicle\Socket\Exception\FailureException;
-use Icicle\Socket\Exception\UnavailableException;
+use Icicle\Promise\{Deferred, Exception\TimeoutException, PromiseInterface};
+use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
 use Icicle\Socket\Socket;
-use Icicle\Stream\ParserTrait;
-use Icicle\Stream\Structures\Buffer;
+use Icicle\Stream\{ParserTrait, Structures\Buffer};
 use Throwable;
 
 class Datagram extends Socket implements DatagramInterface

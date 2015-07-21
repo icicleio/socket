@@ -4,14 +4,9 @@ namespace Icicle\Socket\Server;
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
-use Icicle\Promise\Deferred;
-use Icicle\Promise\PromiseInterface;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
-use Icicle\Socket\Exception\BusyError;
-use Icicle\Socket\Exception\ClosedException;
-use Icicle\Socket\Exception\FailureException;
-use Icicle\Socket\Exception\UnavailableException;
+use Icicle\Promise\{Deferred, PromiseInterface};
+use Icicle\Socket\Client\{Client, ClientInterface};
+use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
 use Icicle\Socket\Socket;
 use Throwable;
 
