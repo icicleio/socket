@@ -662,7 +662,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnCallback(function () {
@@ -704,7 +704,7 @@ trait ReadableStreamTestTrait
     {
         list($readable) = $this->createStreams();
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(false));
@@ -759,7 +759,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -794,7 +794,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -831,7 +831,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -904,7 +904,7 @@ trait ReadableStreamTestTrait
 
         $length = 8;
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -929,7 +929,7 @@ trait ReadableStreamTestTrait
 
         Loop\tick();
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -971,7 +971,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnCallback(function () {
@@ -1008,7 +1008,7 @@ trait ReadableStreamTestTrait
         $offset = 10;
         $char = substr(StreamTest::WRITE_STRING, $offset, 1);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1044,7 +1044,7 @@ trait ReadableStreamTestTrait
         $byte = unpack('C', substr(StreamTest::WRITE_STRING, $offset, 1));
         $byte = $byte[1];
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1074,7 +1074,7 @@ trait ReadableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(false));
@@ -1103,7 +1103,7 @@ trait ReadableStreamTestTrait
         $length = 3;
         $string = substr(StreamTest::WRITE_STRING, $offset, $length);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1165,7 +1165,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1200,7 +1200,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1237,7 +1237,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1276,7 +1276,7 @@ trait ReadableStreamTestTrait
         $offset = 10;
         $char = substr(StreamTest::WRITE_STRING, $offset, 1);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1301,7 +1301,7 @@ trait ReadableStreamTestTrait
 
         Loop\tick();
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1338,7 +1338,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnCallback(function () {
@@ -1408,7 +1408,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1447,7 +1447,7 @@ trait ReadableStreamTestTrait
 
         $length = 8;
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1485,7 +1485,7 @@ trait ReadableStreamTestTrait
 
         $writable->write(StreamTest::WRITE_STRING);
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
@@ -1524,7 +1524,7 @@ trait ReadableStreamTestTrait
 
         $length = 8;
 
-        $mock = $this->getMockBuilder(WritableStreamInterface::class)->getMock();
+        $mock = $this->getMock(WritableStreamInterface::class);
 
         $mock->method('isWritable')
             ->will($this->returnValue(true));
