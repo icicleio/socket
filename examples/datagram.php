@@ -17,7 +17,7 @@ $generator = function (DatagramInterface $datagram) {
     
     try {
         while ($datagram->isOpen()) {
-            list($address, $port, $data) = (yield $datagram->receive());
+            list($address, $port, $data) = yield $datagram->receive();
             $data = trim($data, "\n");
             yield $datagram->send($address, $port, "Echo: {$data}\n");
         }

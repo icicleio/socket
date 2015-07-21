@@ -17,7 +17,7 @@ $generator = function (Server $server) {
             yield $client->write("Want to play shadow? (Type 'exit' to quit)\n");
 			
             while ($client->isReadable()) {
-                $data = (yield $client->read());
+                $data = yield $client->read();
                 
                 $data = trim($data, "\n");
                 

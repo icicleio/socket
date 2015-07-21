@@ -14,7 +14,7 @@ use Icicle\Socket\Server\ServerFactory;
 $coroutine = Coroutine\create(function (ServerInterface $server) {
     $clients = new SplObjectStorage();
     
-    $handler = Coroutine\async(function (ClientInterface $client) use (&$clients) {
+    $handler = Coroutine\wrap(function (ClientInterface $client) use (&$clients) {
         $clients->attach($client);
         $name = $client->getRemoteAddress() . ':' . $client->getRemotePort();
         
@@ -55,6 +55,8 @@ $coroutine = Coroutine\create(function (ServerInterface $server) {
         $handler(yield $server->accept());
     }
 }, (new ServerFactory())->create('127.0.0.1', 60000));
+
+$coroutine->done();
 
 Loop\run();
 

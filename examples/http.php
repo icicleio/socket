@@ -14,7 +14,7 @@ $server = (new ServerFactory())->create('127.0.0.1', 8080, ['backlog' => 1024]);
 $generator = function (ServerInterface $server) {
     $generator = function (ClientInterface $client) {
         try {
-            $data = (yield $client->read());
+            $data = yield $client->read();
             
             $microtime = sprintf("%0.4f", microtime(true));
             $message = "Received the following request ({$microtime}):\r\n\r\n{$data}";
