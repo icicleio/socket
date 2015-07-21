@@ -1,16 +1,19 @@
 <?php
 namespace Icicle\Socket\Server;
 
-use Exception;
 use Icicle\Loop;
+use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
+use Icicle\Promise\PromiseInterface;
 use Icicle\Socket\Client\Client;
+use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Socket\Socket;
+use Throwable;
 
 class Server extends Socket implements ServerInterface
 {
@@ -65,9 +68,9 @@ class Server extends Socket implements ServerInterface
     /**
      * Frees resources associated with the server and closes the server.
      *
-     * @param Exception $exception Reason for closing the server.
+     * @param \Throwable $exception Reason for closing the server.
      */
-    protected function free(Exception $exception = null)
+    protected function free(Throwable $exception = null)
     {
         if (null !== $this->poll) {
             $this->poll->free();
@@ -89,7 +92,7 @@ class Server extends Socket implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function accept()
+    public function accept(): PromiseInterface
     {
         if (null !== $this->deferred) {
             return Promise\reject(new BusyError('Already waiting on server.'));
@@ -112,7 +115,7 @@ class Server extends Socket implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getAddress()
+    public function getAddress(): string
     {
         return $this->address;
     }
@@ -120,7 +123,7 @@ class Server extends Socket implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function getPort()
+    public function getPort(): int
     {
         return $this->port;
     }
@@ -130,7 +133,7 @@ class Server extends Socket implements ServerInterface
      *
      * @return \Icicle\Socket\Client\ClientInterface
      */
-    protected function createClient($socket)
+    protected function createClient($socket): ClientInterface
     {
         return new Client($socket);
     }
@@ -140,7 +143,7 @@ class Server extends Socket implements ServerInterface
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket)
+    private function createPoll($socket): SocketEventInterface
     {
         return Loop\poll($socket, function ($resource) {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
@@ -154,7 +157,7 @@ class Server extends Socket implements ServerInterface
 
             try {
                 $this->deferred->resolve($this->createClient($client));
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 $this->deferred->reject($exception);
             }
 

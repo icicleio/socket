@@ -1,16 +1,18 @@
 <?php
 namespace Icicle\Socket\Stream;
 
-use Exception;
 use Icicle\Loop;
+use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
+use Icicle\Promise\PromiseInterface;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\SocketInterface;
 use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\UnwritableException;
 use Icicle\Stream\Structures\Buffer;
+use Throwable;
 
 trait WritableStreamTrait
 {
@@ -40,9 +42,9 @@ trait WritableStreamTrait
     /**
      * Frees resources associated with the stream and closes the stream.
      *
-     * @param \Exception|null $exception
+     * @param \Throwable|null $exception
      */
-    abstract protected function free(Exception $exception = null);
+    abstract protected function free(Throwable $exception = null);
 
     /**
      * @param resource $socket Stream socket resource.
@@ -68,9 +70,9 @@ trait WritableStreamTrait
     /**
      * Frees all resources used by the writable stream.
      *
-     * @param \Exception|null $exception
+     * @param \Throwable|null $exception
      */
-    private function detach(Exception $exception = null)
+    private function detach(Throwable $exception = null)
     {
         $this->writable = false;
 
@@ -89,7 +91,7 @@ trait WritableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function write($data, $timeout = 0)
+    public function write(string $data, float $timeout = 0): PromiseInterface
     {
         if (!$this->isWritable()) {
             return Promise\reject(new UnwritableException('The stream is no longer writable.'));
@@ -105,7 +107,7 @@ trait WritableStreamTrait
 
             try {
                 $written = $this->send($this->getResource(), $data, false);
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 $this->free($exception);
                 return Promise\reject($exception);
             }
@@ -117,7 +119,7 @@ trait WritableStreamTrait
             $data->remove($written);
         }
 
-        $deferred = new Deferred(function (Exception $exception) {
+        $deferred = new Deferred(function (Throwable $exception) {
             $this->free($exception);
         });
         $this->writeQueue->push([$data, $written, $timeout, $deferred]);
@@ -132,7 +134,7 @@ trait WritableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function end($data = '', $timeout = 0)
+    public function end(string $data = '', float $timeout = 0): PromiseInterface
     {
         $promise = $this->write($data, $timeout);
         
@@ -156,13 +158,13 @@ trait WritableStreamTrait
      * @reject \Icicle\Stream\Exception\UnwritableException If the stream is no longer writable.
      * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
      */
-    protected function await($timeout = 0)
+    protected function await(float $timeout = 0): PromiseInterface
     {
         if (!$this->isWritable()) {
             return Promise\reject(new UnwritableException('The stream is no longer writable.'));
         }
         
-        $deferred = new Deferred(function (Exception $exception) {
+        $deferred = new Deferred(function (Throwable $exception) {
             $this->free($exception);
         });
         $this->writeQueue->push([new Buffer(), 0, $timeout, $deferred]);
@@ -177,7 +179,7 @@ trait WritableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function isWritable()
+    public function isWritable(): bool
     {
         return $this->writable;
     }
@@ -187,7 +189,7 @@ trait WritableStreamTrait
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createAwait($socket)
+    private function createAwait($socket): SocketEventInterface
     {
         return Loop\await($socket, function ($resource, $expired) {
             if ($expired) {
@@ -206,7 +208,7 @@ trait WritableStreamTrait
             } else {
                 try {
                     $written = $this->send($resource, $data, true);
-                } catch (Exception $exception) {
+                } catch (Throwable $exception) {
                     $deferred->reject($exception);
                     $this->free($exception);
                     return;
@@ -237,7 +239,7 @@ trait WritableStreamTrait
      *
      * @throws FailureException If writing fails.
      */
-    private function send($resource, Buffer $data, $strict = false)
+    private function send($resource, Buffer $data, bool $strict = false): int
     {
         // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
         $written = @fwrite($resource, $data, SocketInterface::CHUNK_SIZE);

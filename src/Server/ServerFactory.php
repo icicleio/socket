@@ -19,7 +19,7 @@ class ServerFactory implements ServerFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function create($host, $port, array $options = null)
+    public function create($host, $port, array $options = null): ServerInterface
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']

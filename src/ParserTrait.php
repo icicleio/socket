@@ -10,7 +10,7 @@ trait ParserTrait
      *
      * @return array [ip-address, port] or [socket-path, 0].
      */
-    protected function parseName($name)
+    protected function parseName(string $name): array
     {
         $colon = strrpos($name, ':');
 
@@ -33,7 +33,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function parseAddress($address)
+    protected function parseAddress($address): string
     {
         if (is_int($address)) {
             return long2ip($address);
@@ -54,7 +54,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function makeName($address, $port)
+    protected function makeName($address, $port): string
     {
         if (null === $port) { // Unix socket.
             return $address;
@@ -72,7 +72,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function makeUri($protocol, $address, $port)
+    protected function makeUri(string $protocol, $address, $port): string
     {
         if (null === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);

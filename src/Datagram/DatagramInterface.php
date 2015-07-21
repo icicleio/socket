@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Socket\Datagram;
 
+use Icicle\Promise\PromiseInterface;
 use Icicle\Socket\SocketInterface;
 
 interface DatagramInterface extends SocketInterface
@@ -8,12 +9,12 @@ interface DatagramInterface extends SocketInterface
     /**
      * @return string
      */
-    public function getAddress();
+    public function getAddress(): string;
     
     /**
      * @return int
      */
-    public function getPort();
+    public function getPort(): int;
     
     /**
      * @param int $length
@@ -29,7 +30,7 @@ interface DatagramInterface extends SocketInterface
      * @reject TimeoutException If receiving times out.
      * @reject FailureException If receiving fails.
      */
-    public function receive($length = 0, $timeout = 0);
+    public function receive(int $length = 0, float $timeout = 0): PromiseInterface;
 
     /**
      * @param int|string $address IP address of receiver.
@@ -45,5 +46,5 @@ interface DatagramInterface extends SocketInterface
      * @reject \Icicle\Socket\Exception\TimeoutException If sending the data times out.
      * @reject \Icicle\Socket\Exception\FailureException If sending data fails.
      */
-    public function send($address, $port, $data);
+    public function send($address, int $port, string $data): PromiseInterface;
 }

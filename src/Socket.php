@@ -46,7 +46,7 @@ abstract class Socket implements SocketInterface
      *
      * @return bool
      */
-    public function isOpen()
+    public function isOpen(): bool
     {
         return null !== $this->socket;
     }
@@ -83,7 +83,7 @@ abstract class Socket implements SocketInterface
      *
      * @throws \Icicle\Socket\Exception\FailureException If getting the socket name fails.
      */
-    protected function getName($peer = true)
+    protected function getName(bool $peer = true): array
     {
         // Error reporting suppressed since stream_socket_get_name() emits an E_WARNING on failure (checked below).
         $name = @stream_socket_get_name($this->socket, (bool) $peer);

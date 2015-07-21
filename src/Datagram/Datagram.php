@@ -1,10 +1,11 @@
 <?php
 namespace Icicle\Socket\Datagram;
 
-use Exception;
 use Icicle\Loop;
+use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
+use Icicle\Promise\PromiseInterface;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
@@ -13,6 +14,7 @@ use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Socket\Socket;
 use Icicle\Stream\ParserTrait;
 use Icicle\Stream\Structures\Buffer;
+use Throwable;
 
 class Datagram extends Socket implements DatagramInterface
 {
@@ -88,9 +90,9 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * Frees resources associated with the datagram and closes the datagram.
      *
-     * @param \Exception|null $exception Reason for closing the datagram.
+     * @param \Throwable|null $exception Reason for closing the datagram.
      */
-    protected function free(Exception $exception = null)
+    protected function free(Throwable $exception = null)
     {
         if (null !== $this->poll) {
             $this->poll->free();
@@ -129,7 +131,7 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function getAddress()
+    public function getAddress(): string
     {
         return $this->address;
     }
@@ -137,7 +139,7 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function getPort()
+    public function getPort(): int
     {
         return $this->port;
     }
@@ -145,7 +147,7 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function receive($length = 0, $timeout = 0)
+    public function receive(int $length = 0, float $timeout = 0): PromiseInterface
     {
         if (null !== $this->deferred) {
             return Promise\reject(new BusyError('Already waiting on datagram.'));
@@ -173,7 +175,7 @@ class Datagram extends Socket implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function send($address, $port, $data)
+    public function send($address, int $port, string $data): PromiseInterface
     {
         if (!$this->isOpen()) {
             return Promise\reject(new UnavailableException('The datagram is no longer writable.'));
@@ -190,7 +192,7 @@ class Datagram extends Socket implements DatagramInterface
 
             try {
                 $written = $this->sendTo($this->getResource(), $data, $peer, false);
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 $this->free($exception);
                 return Promise\reject($exception);
             }
@@ -217,7 +219,7 @@ class Datagram extends Socket implements DatagramInterface
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket)
+    private function createPoll($socket): SocketEventInterface
     {
         return Loop\poll($socket, function ($resource, $expired) {
             try {
@@ -241,7 +243,7 @@ class Datagram extends Socket implements DatagramInterface
                 $result = [$address, $port, $data];
 
                 $this->deferred->resolve($result);
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 $this->deferred->reject($exception);
             }
 
@@ -254,7 +256,7 @@ class Datagram extends Socket implements DatagramInterface
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createAwait($socket)
+    private function createAwait($socket): SocketEventInterface
     {
         return Loop\await($socket, function ($resource) use (&$onWrite) {
             /**
@@ -268,7 +270,7 @@ class Datagram extends Socket implements DatagramInterface
             } else {
                 try {
                     $written = $this->sendTo($resource, $data, $peer, true);
-                } catch (Exception $exception) {
+                } catch (Throwable $exception) {
                     $deferred->reject($exception);
                     $this->free($exception);
                     return;
@@ -299,7 +301,7 @@ class Datagram extends Socket implements DatagramInterface
      *
      * @throws FailureException If sending the data fails.
      */
-    private function sendTo($resource, Buffer $data, $peer, $strict = false)
+    private function sendTo($resource, Buffer $data, string $peer, bool $strict = false): int
     {
         $written = stream_socket_sendto($resource, $data->peek(self::CHUNK_SIZE), 0, $peer);
 

@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Socket\Stream;
 
-use Exception;
 use Icicle\Socket\Socket;
 use Icicle\Stream\WritableStreamInterface;
 
@@ -21,9 +20,9 @@ class WritableStream extends Socket implements WritableStreamInterface
     /**
      * Frees resources associated with the stream and closes the stream.
      *
-     * @param \Exception|null $exception Reason for the stream closing.
+     * @param \Throwable|null $exception Reason for the stream closing.
      */
-    protected function free(Exception $exception = null)
+    protected function free(\Throwable $exception = null)
     {
         $this->detach($exception);
         parent::close();

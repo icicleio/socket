@@ -1,7 +1,6 @@
 <?php
 namespace Icicle\Socket\Stream;
 
-use Exception;
 use Icicle\Socket\Socket;
 use Icicle\Stream\ReadableStreamInterface;
 
@@ -21,9 +20,9 @@ class ReadableStream extends Socket implements ReadableStreamInterface
     /**
      * Frees resources associated with the stream and closes the stream.
      *
-     * @param \Exception $exception Reason for the stream closing.
+     * @param \Throwable $exception Reason for the stream closing.
      */
-    protected function free(Exception $exception = null)
+    protected function free(\Throwable $exception = null)
     {
         $this->detach($exception);
         parent::close();

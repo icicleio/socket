@@ -21,40 +21,40 @@ interface ClientInterface extends SocketInterface, DuplexStreamInterface
      * @reject \Icicle\Socket\Exception\ClosedException If the client has been closed.
      * @reject \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
      */
-    public function enableCrypto($method, $timeout = 0);
+    public function enableCrypto(int $method, float $timeout = 0): \Generator;
     
     /**
      * Determines if cyrpto has been enabled.
      *
      * @return bool
      */
-    public function isCryptoEnabled();
+    public function isCryptoEnabled(): bool;
     
     /**
      * Returns the remote IP or socket path as a string representation.
      *
      * @return string
      */
-    public function getRemoteAddress();
+    public function getRemoteAddress(): string;
     
     /**
      * Returns the remote port number (or 0 if unix socket).
      *
      * @return int
      */
-    public function getRemotePort();
+    public function getRemotePort(): int;
     
     /**
      * Returns the local IP or socket path as a string representation.
      *
      * @return string
      */
-    public function getLocalAddress();
+    public function getLocalAddress(): string;
     
     /**
      * Returns the local port number (or 0 if unix socket).
      *
      * @return int
      */
-    public function getLocalPort();
+    public function getLocalPort(): int;
 }

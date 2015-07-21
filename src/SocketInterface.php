@@ -10,7 +10,7 @@ interface SocketInterface
      *
      * @return bool
      */
-    public function isOpen();
+    public function isOpen(): bool;
     
     /**
      * Closes the socket, making it unreadable or unwritable.

@@ -49,7 +49,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function enableCrypto($method, $timeout = 0)
+    public function enableCrypto(int $method, float $timeout = 0): \Generator
     {
         $method = (int) $method;
 
@@ -67,8 +67,7 @@ class Client extends DuplexStream implements ClientInterface
 
             if ($result) {
                 $this->crypto = $method;
-                yield $this;
-                return;
+                return $this;
             }
         } while (!(yield $this->poll($timeout)));
 
@@ -82,7 +81,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * @return bool
      */
-    public function isCryptoEnabled()
+    public function isCryptoEnabled(): bool
     {
         return 0 !== $this->crypto;
     }
@@ -90,7 +89,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function getRemoteAddress()
+    public function getRemoteAddress(): string
     {
         return $this->remoteAddress;
     }
@@ -98,7 +97,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function getRemotePort()
+    public function getRemotePort(): int
     {
         return $this->remotePort;
     }
@@ -106,7 +105,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function getLocalAddress()
+    public function getLocalAddress(): string
     {
         return $this->localAddress;
     }
@@ -114,7 +113,7 @@ class Client extends DuplexStream implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function getLocalPort()
+    public function getLocalPort(): int
     {
         return $this->localPort;
     }

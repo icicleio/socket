@@ -1,10 +1,11 @@
 <?php
 namespace Icicle\Socket\Stream;
 
-use Exception;
 use Icicle\Loop;
+use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise;
 use Icicle\Promise\Deferred;
+use Icicle\Promise\PromiseInterface;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\SocketInterface;
@@ -13,6 +14,7 @@ use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\UnreadableException;
 use Icicle\Stream\PipeTrait;
 use Icicle\Stream\Structures\Buffer;
+use Throwable;
 
 trait ReadableStreamTrait
 {
@@ -48,7 +50,7 @@ trait ReadableStreamTrait
      *
      * @return bool
      */
-    abstract public function isOpen();
+    abstract public function isOpen(): bool;
     
     /**
      * @return resource Stream socket resource.
@@ -58,9 +60,9 @@ trait ReadableStreamTrait
     /**
      * Frees resources associated with the stream and closes the stream.
      *
-     * @param \Exception|null $exception
+     * @param \Throwable|null $exception
      */
-    abstract protected function free(Exception $exception = null);
+    abstract protected function free(Throwable $exception = null);
 
     /**
      * Closes the stream socket.
@@ -85,9 +87,9 @@ trait ReadableStreamTrait
     /**
      * Frees all resources used by the writable stream.
      *
-     * @param \Exception|null $exception
+     * @param \Throwable|null $exception
      */
-    private function detach(Exception $exception = null)
+    private function detach(Throwable $exception = null)
     {
         if (null !== $this->poll) {
             $this->poll->free();
@@ -103,7 +105,7 @@ trait ReadableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function read($length = 0, $byte = null, $timeout = 0)
+    public function read(int $length = 0, $byte = null, float $timeout = 0): PromiseInterface
     {
         if (null !== $this->deferred) {
             return Promise\reject(new BusyError('Already waiting on stream.'));
@@ -161,7 +163,7 @@ trait ReadableStreamTrait
      * @reject \Icicle\Stream\Exception\UnreadableException If the stream is no longer readable.
      * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
      */
-    protected function poll($timeout = 0)
+    protected function poll(float $timeout = 0): PromiseInterface
     {
         if (null !== $this->deferred) {
             return Promise\reject(new BusyError('Already waiting on stream.'));
@@ -190,7 +192,7 @@ trait ReadableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function isReadable()
+    public function isReadable(): bool
     {
         return $this->isOpen();
     }
@@ -200,7 +202,7 @@ trait ReadableStreamTrait
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket)
+    private function createPoll($socket): SocketEventInterface
     {
         return Loop\poll($socket, function ($resource, $expired) {
             if ($expired) {
@@ -233,7 +235,7 @@ trait ReadableStreamTrait
      *
      * @return string
      */
-    private function fetch($resource)
+    private function fetch($resource): string
     {
         if ($this->buffer->isEmpty()) {
             $data = (string) fread($resource, $this->length);
@@ -257,7 +259,7 @@ trait ReadableStreamTrait
      *
      * @return bool
      */
-    private function eof($resource)
+    private function eof($resource): bool
     {
         return $this->buffer->isEmpty() && feof($resource);
     }
