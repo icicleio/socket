@@ -259,6 +259,6 @@ trait ReadableStreamTrait
      */
     private function eof($resource)
     {
-        return $this->buffer->isEmpty() && feof($resource);
+        return feof($resource) && $this->buffer->isEmpty();
     }
 }
