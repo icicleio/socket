@@ -16,8 +16,8 @@ interface DatagramInterface extends SocketInterface
     public function getPort();
     
     /**
-     * @param int|null $length
-     * @param float|int|null $timeout
+     * @param int $length
+     * @param float|int $timeout
      *
      * @return \Icicle\Promise\PromiseInterface
      *
@@ -29,12 +29,12 @@ interface DatagramInterface extends SocketInterface
      * @reject TimeoutException If receiving times out.
      * @reject FailureException If receiving fails.
      */
-    public function receive($length = null, $timeout = null);
+    public function receive($length = 0, $timeout = 0);
 
     /**
      * @param int|string $address IP address of receiver.
      * @param int $port Port of receiver.
-     * @param string|null $data Data to send.
+     * @param string $data Data to send.
      *
      * @return \Icicle\Promise\PromiseInterface
      *
