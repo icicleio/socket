@@ -103,24 +103,14 @@ class Datagram extends Socket implements DatagramInterface
         }
 
         if (null !== $this->deferred) {
-            if (null === $exception) {
-                $exception = new ClosedException('The stream was unexpectedly closed.');
-            }
-
-            $this->deferred->reject($exception);
+            $this->deferred->reject($exception ?: new ClosedException('The datagram was unexpectedly closed.'));
             $this->deferred = null;
         }
 
-        if (!$this->writeQueue->isEmpty()) {
-            if (null === $exception) {
-                $exception = new ClosedException('The stream was unexpectedly closed.');
-            }
-
-            do {
-                /** @var \Icicle\Promise\Deferred $deferred */
-                list( , , , $deferred) = $this->writeQueue->shift();
-                $deferred->reject($exception);
-            } while (!$this->writeQueue->isEmpty());
+        while (!$this->writeQueue->isEmpty()) {
+            /** @var \Icicle\Promise\Deferred $deferred */
+            list( , , , $deferred) = $this->writeQueue->shift();
+            $deferred->reject($exception ?: new ClosedException('The datagram was unexpectedly closed.'));
         }
 
         parent::close();
