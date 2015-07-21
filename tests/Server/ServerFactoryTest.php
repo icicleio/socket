@@ -65,7 +65,7 @@ class ServerFactoryTest extends TestCase
         $this->assertInstanceOf(ServerInterface::class, $this->server);
 
         $this->assertSame(self::HOST_UNIX, $this->server->getAddress());
-        $this->assertSame(null, $this->server->getPort());
+        $this->assertSame(0, $this->server->getPort());
 
         unlink(self::HOST_UNIX);
     }

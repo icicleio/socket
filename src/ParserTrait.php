@@ -8,14 +8,14 @@ trait ParserTrait
      *
      * @param string $name
      *
-     * @return array [ip-address, port] or [socket-path, null].
+     * @return array [ip-address, port] or [socket-path, 0].
      */
     protected function parseName($name)
     {
         $colon = strrpos($name, ':');
 
         if (false === $colon) { // Unix socket.
-            return [$name, null];
+            return [$name, 0];
         }
 
         $address = trim(substr($name, 0, $colon), '[]');

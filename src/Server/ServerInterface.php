@@ -24,9 +24,9 @@ interface ServerInterface extends SocketInterface
     public function getAddress();
     
     /**
-     * Returns the port on which the server is listening (or null if unix socket).
+     * Returns the port on which the server is listening (or 0 if unix socket).
      *
-     * @return int|null
+     * @return int
      */
     public function getPort();
 }

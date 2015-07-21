@@ -230,7 +230,7 @@ class ConnectorTest extends TestCase
         $promise->done(function (Client $client) {
             $this->assertTrue($client->isOpen());
             $this->assertSame(self::HOST_UNIX, $client->getRemoteAddress());
-            $this->assertSame(null, $client->getRemotePort());
+            $this->assertSame(0, $client->getRemotePort());
         });
 
         Loop\run();

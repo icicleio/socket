@@ -38,9 +38,9 @@ interface ClientInterface extends SocketInterface, DuplexStreamInterface
     public function getRemoteAddress();
     
     /**
-     * Returns the remote port number (or null if unix socket).
+     * Returns the remote port number (or 0 if unix socket).
      *
-     * @return int|null
+     * @return int
      */
     public function getRemotePort();
     
@@ -52,9 +52,9 @@ interface ClientInterface extends SocketInterface, DuplexStreamInterface
     public function getLocalAddress();
     
     /**
-     * Returns the local port number (or null if unix socket).
+     * Returns the local port number (or 0 if unix socket).
      *
-     * @return int|null
+     * @return int
      */
     public function getLocalPort();
 }
