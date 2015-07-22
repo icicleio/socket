@@ -18,17 +18,16 @@
         }
     ],
     "require": {
-        "icicleio/icicle": "2.0.x-dev",
-        "icicleio/stream": "2.0.x-dev"
+        "icicleio/icicle": "~2.0",
+        "icicleio/stream": "~2.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "5.0.x-dev"
+        "phpunit/phpunit": "~5.0"
     },
     "minimum-stability": "dev",
     "extra": {
         "branch-alias": {
             "dev-master": "2.0.x-dev",
-            "dev-development": "2.1.x-dev",
             "dev-v1.x": "1.x-dev",
             "dev-v0.1.x": "0.1.x-dev"
         }
