@@ -12,7 +12,6 @@ use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\UnreadableException;
 use Icicle\Stream\PipeTrait;
-use Icicle\Stream\Structures\Buffer;
 
 trait ReadableStreamTrait
 {
@@ -39,9 +38,9 @@ trait ReadableStreamTrait
     private $byte;
 
     /**
-     * @var \Icicle\Stream\Structures\Buffer
+     * @var string
      */
-    private $buffer;
+    private $buffer = '';
 
     /**
      * Determines if the stream is still open.
@@ -77,9 +76,29 @@ trait ReadableStreamTrait
     {
         stream_set_read_buffer($socket, 0);
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
-        
-        $this->poll = $this->createPoll($socket);
-        $this->buffer = new Buffer();
+
+        $this->poll = Loop\poll($socket, function ($resource, $expired) {
+            if ($expired) {
+                $this->deferred->reject(new TimeoutException('The connection timed out.'));
+                $this->deferred = null;
+                return;
+            }
+
+            if (0 === $this->length) {
+                $this->deferred->resolve('');
+                $this->deferred = null;
+                return;
+            }
+
+            $data = $this->fetch($resource);
+
+            $this->deferred->resolve($data);
+            $this->deferred = null;
+
+            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
+                $this->close();
+            }
+        });
     }
     
     /**
@@ -171,7 +190,7 @@ trait ReadableStreamTrait
             return Promise\reject(new UnreadableException('The stream is no longer readable.'));
         }
 
-        if (!$this->buffer->isEmpty()) {
+        if ('' !== $this->buffer) {
             return Promise\reject(new FailureException('Stream buffer is not empty. Perform another read before polling.'));
         }
 
@@ -196,37 +215,6 @@ trait ReadableStreamTrait
     }
 
     /**
-     * @param resource $socket Stream socket resource.
-     *
-     * @return \Icicle\Loop\Events\SocketEventInterface
-     */
-    private function createPoll($socket)
-    {
-        return Loop\poll($socket, function ($resource, $expired) {
-            if ($expired) {
-                $this->deferred->reject(new TimeoutException('The connection timed out.'));
-                $this->deferred = null;
-                return;
-            }
-
-            if (0 === $this->length) {
-                $this->deferred->resolve('');
-                $this->deferred = null;
-                return;
-            }
-
-            $data = $this->fetch($resource);
-
-            $this->deferred->resolve($data);
-            $this->deferred = null;
-
-            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
-                $this->close();
-            }
-        });
-    }
-
-    /**
      * Reads data from the stream socket resource based on set length and read-to byte.
      *
      * @param resource $resource
@@ -235,21 +223,25 @@ trait ReadableStreamTrait
      */
     private function fetch($resource)
     {
-        if ($this->buffer->isEmpty()) {
+        if ('' === $this->buffer) {
             $data = (string) fread($resource, $this->length);
 
             if (null === $this->byte || '' === $data) {
                 return $data;
             }
 
-            $this->buffer->push($data);
+            $this->buffer = $data;
         }
 
-        if (null === $this->byte || false === ($position = $this->buffer->search($this->byte))) {
-            return $this->buffer->shift($this->length);
+        if (null !== $this->byte && false !== ($position = strpos($this->buffer, $this->byte))) {
+            ++$position; // Include byte in result.
+        } else {
+            $position = $this->length;
         }
 
-        return $this->buffer->shift($position + 1);
+        $data = (string) substr($this->buffer, 0, $position);
+        $this->buffer = (string) substr($this->buffer, $position);
+        return $data;
     }
 
     /**
@@ -259,6 +251,6 @@ trait ReadableStreamTrait
      */
     private function eof($resource)
     {
-        return feof($resource) && $this->buffer->isEmpty();
+        return feof($resource) && '' === $this->buffer;
     }
 }

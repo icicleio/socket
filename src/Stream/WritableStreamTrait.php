@@ -10,13 +10,12 @@ use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\SocketInterface;
 use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\UnwritableException;
-use Icicle\Stream\Structures\Buffer;
 
 trait WritableStreamTrait
 {
     /**
      * Queue of data to write and promises to resolve when that data is written (or fails to write).
-     * Data is stored as an array: [Buffer, int, int|float|null, Deferred].
+     * Data is stored as an array: [string, int, int|float|null, Deferred].
      *
      * @var \SplQueue
      */
@@ -54,7 +53,42 @@ trait WritableStreamTrait
         
         $this->writeQueue = new \SplQueue();
         
-        $this->await = $this->createAwait($socket);
+        $this->await = Loop\await($socket, function ($resource, $expired) {
+            if ($expired) {
+                $this->free(new TimeoutException('Writing to the socket timed out.'));
+                return;
+            }
+
+            /** @var \Icicle\Promise\Deferred $deferred */
+            list($data, $previous, $timeout, $deferred) = $this->writeQueue->shift();
+
+            $length = strlen($data);
+
+            if (0 === $length) {
+                $deferred->resolve($previous);
+            } else {
+                try {
+                    $written = $this->send($resource, $data, true);
+                } catch (Exception $exception) {
+                    $deferred->reject($exception);
+                    $this->free($exception);
+                    return;
+                }
+
+                if ($length <= $written) {
+                    $deferred->resolve($written + $previous);
+                } else {
+                    $data = substr($data, $written);
+                    $written += $previous;
+                    $this->writeQueue->unshift([$data, $written, $timeout, $deferred]);
+                }
+            }
+
+            if (!$this->writeQueue->isEmpty()) {
+                list( , , $timeout) = $this->writeQueue->top();
+                $this->await->listen($timeout);
+            }
+        });
     }
 
     /**
@@ -94,12 +128,13 @@ trait WritableStreamTrait
         if (!$this->isWritable()) {
             return Promise\reject(new UnwritableException('The stream is no longer writable.'));
         }
-        
-        $data = new Buffer($data);
+
+        $data = (string) $data;
+        $length = strlen($data);
         $written = 0;
         
         if ($this->writeQueue->isEmpty()) {
-            if ($data->isEmpty()) {
+            if (0 === $length) {
                 return Promise\resolve($written);
             }
 
@@ -110,11 +145,11 @@ trait WritableStreamTrait
                 return Promise\reject($exception);
             }
 
-            if ($data->getLength() <= $written) {
+            if ($length <= $written) {
                 return Promise\resolve($written);
             }
             
-            $data->remove($written);
+            $data = substr($data, $written);
         }
 
         $deferred = new Deferred(function (Exception $exception) {
@@ -165,7 +200,7 @@ trait WritableStreamTrait
         $deferred = new Deferred(function (Exception $exception) {
             $this->free($exception);
         });
-        $this->writeQueue->push([new Buffer(), 0, $timeout, $deferred]);
+        $this->writeQueue->push(['', 0, $timeout, $deferred]);
         
         if (!$this->await->isPending()) {
             $this->await->listen($timeout);
@@ -181,63 +216,17 @@ trait WritableStreamTrait
     {
         return $this->writable;
     }
-    
-    /**
-     * @param resource $socket Stream socket resource.
-     *
-     * @return \Icicle\Loop\Events\SocketEventInterface
-     */
-    private function createAwait($socket)
-    {
-        return Loop\await($socket, function ($resource, $expired) {
-            if ($expired) {
-                $this->free(new TimeoutException('Writing to the socket timed out.'));
-                return;
-            }
-
-            /**
-             * @var \Icicle\Stream\Structures\Buffer $data
-             * @var \Icicle\Promise\Deferred $deferred
-             */
-            list($data, $previous, $timeout, $deferred) = $this->writeQueue->shift();
-            
-            if ($data->isEmpty()) {
-                $deferred->resolve($previous);
-            } else {
-                try {
-                    $written = $this->send($resource, $data, true);
-                } catch (Exception $exception) {
-                    $deferred->reject($exception);
-                    $this->free($exception);
-                    return;
-                }
-
-                if ($data->getLength() <= $written) {
-                    $deferred->resolve($written + $previous);
-                } else {
-                    $data->remove($written);
-                    $written += $previous;
-                    $this->writeQueue->unshift([$data, $written, $timeout, $deferred]);
-                }
-            }
-            
-            if (!$this->writeQueue->isEmpty()) {
-                list( , , $timeout) = $this->writeQueue->top();
-                $this->await->listen($timeout);
-            }
-        });
-    }
 
     /**
      * @param resource $resource
-     * @param Buffer $data
+     * @param string $data
      * @param bool $strict If true, fail if no bytes are written.
      *
      * @return int Number of bytes written.
      *
      * @throws FailureException If writing fails.
      */
-    private function send($resource, Buffer $data, $strict = false)
+    private function send($resource, $data, $strict = false)
     {
         // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
         $written = @fwrite($resource, $data, SocketInterface::CHUNK_SIZE);
