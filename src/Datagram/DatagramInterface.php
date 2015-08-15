@@ -16,34 +16,38 @@ interface DatagramInterface extends SocketInterface
     public function getPort();
     
     /**
+     * @coroutine
+     *
      * @param int $length
      * @param float|int $timeout
      *
-     * @return \Icicle\Promise\PromiseInterface
+     * @return \Generator
      *
      * @resolve [string, int, string] Array containing the senders remote address, remote port, and data received.
      *
-     * @reject BusyError If a read was already pending on the datagram.
-     * @reject UnreadableException If the datagram is no longer readable.
-     * @reject ClosedException If the datagram has been closed.
-     * @reject TimeoutException If receiving times out.
-     * @reject FailureException If receiving fails.
+     * @throws \Icicle\Socket\Exception\BusyError If a read was already pending on the datagram.
+     * @throws \Icicle\Socket\Exception\UnavailableException If the datagram is no longer readable.
+     * @throws \Icicle\Socket\Exception\ClosedException If the datagram has been closed.
+     * @throws \Icicle\Promise\Exception\TimeoutException If receiving times out.
+     * @throws \Icicle\Socket\Exception\FailureException If receiving fails.
      */
     public function receive($length = 0, $timeout = 0);
 
     /**
+     * @coroutine
+     *
      * @param int|string $address IP address of receiver.
      * @param int $port Port of receiver.
      * @param string $data Data to send.
      *
-     * @return \Icicle\Promise\PromiseInterface
+     * @return \Generator
      *
      * @resolve int Number of bytes written.
      *
-     * @reject \Icicle\Socket\Exception\UnavailableException If the datagram is no longer writable.
-     * @reject \Icicle\Socket\Exception\ClosedException If the datagram closes.
-     * @reject \Icicle\Socket\Exception\TimeoutException If sending the data times out.
-     * @reject \Icicle\Socket\Exception\FailureException If sending data fails.
+     * @throws \Icicle\Socket\Exception\UnavailableException If the datagram is no longer writable.
+     * @throws \Icicle\Socket\Exception\ClosedException If the datagram closes.
+     * @throws \Icicle\Promise\Exception\TimeoutException If sending the data times out.
+     * @throws \Icicle\Socket\Exception\FailureException If sending data fails.
      */
     public function send($address, $port, $data);
 }

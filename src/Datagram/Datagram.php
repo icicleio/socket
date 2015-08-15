@@ -3,7 +3,6 @@ namespace Icicle\Socket\Datagram;
 
 use Exception;
 use Icicle\Loop;
-use Icicle\Promise;
 use Icicle\Promise\Deferred;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\BusyError;
@@ -67,7 +66,6 @@ class Datagram extends Socket implements DatagramInterface
         $this->writeQueue = new \SplQueue();
         
         $this->poll = $this->createPoll($socket);
-        
         $this->await = $this->createAwait($socket);
         
         try {
@@ -92,25 +90,21 @@ class Datagram extends Socket implements DatagramInterface
      */
     protected function free(Exception $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-            $this->poll = null;
-        }
-
-        if (null !== $this->await) {
-            $this->await->free();
-            $this->await = null;
-        }
+        $this->poll->free();
+        $this->await->free();
 
         if (null !== $this->deferred) {
-            $this->deferred->reject($exception ?: new ClosedException('The datagram was unexpectedly closed.'));
-            $this->deferred = null;
+            $this->deferred->getPromise()->cancel(
+                $exception = $exception ?: new ClosedException('The datagram was unexpectedly closed.')
+            );
         }
 
         while (!$this->writeQueue->isEmpty()) {
             /** @var \Icicle\Promise\Deferred $deferred */
             list( , , , $deferred) = $this->writeQueue->shift();
-            $deferred->reject($exception ?: new ClosedException('The datagram was unexpectedly closed.'));
+            $deferred->getPromise()->cancel(
+                $exception = $exception ?: new ClosedException('The datagram was unexpectedly closed.')
+            );
         }
 
         parent::close();
@@ -138,11 +132,11 @@ class Datagram extends Socket implements DatagramInterface
     public function receive($length = 0, $timeout = 0)
     {
         if (null !== $this->deferred) {
-            return Promise\reject(new BusyError('Already waiting on datagram.'));
+            throw new BusyError('Already waiting on datagram.');
         }
         
         if (!$this->isOpen()) {
-            return Promise\reject(new UnavailableException('The datagram is no longer readable.'));
+            throw new UnavailableException('The datagram is no longer readable.');
         }
 
         $this->length = $this->parseLength($length);
@@ -154,10 +148,13 @@ class Datagram extends Socket implements DatagramInterface
         
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
-            $this->deferred = null;
         });
-        
-        return $this->deferred->getPromise();
+
+        try {
+            yield $this->deferred->getPromise();
+        } finally {
+            $this->deferred = null;
+        }
     }
 
     /**
@@ -166,7 +163,7 @@ class Datagram extends Socket implements DatagramInterface
     public function send($address, $port, $data)
     {
         if (!$this->isOpen()) {
-            return Promise\reject(new UnavailableException('The datagram is no longer writable.'));
+            throw new UnavailableException('The datagram is no longer writable.');
         }
         
         $data = new Buffer($data);
@@ -175,31 +172,35 @@ class Datagram extends Socket implements DatagramInterface
         
         if ($this->writeQueue->isEmpty()) {
             if ($data->isEmpty()) {
-                return Promise\resolve($written);
+                yield $written;
+                return;
             }
 
-            try {
-                $written = $this->sendTo($this->getResource(), $data, $peer, false);
-            } catch (Exception $exception) {
-                $this->free($exception);
-                return Promise\reject($exception);
-            }
+            $written = $this->sendTo($this->getResource(), $data, $peer, false);
 
             if ($data->getLength() <= $written) {
-                return Promise\resolve($written);
+                yield $written;
+                return;
             }
             
             $data->remove($written);
         }
-        
+
         $deferred = new Deferred();
         $this->writeQueue->push([$data, $written, $peer, $deferred]);
         
         if (!$this->await->isPending()) {
             $this->await->listen();
         }
-        
-        return $deferred->getPromise();
+
+        try {
+            yield $deferred->getPromise();
+        } catch (Exception $exception) {
+            if ($this->isOpen()) {
+                $this->free($exception);
+            }
+            throw $exception;
+        }
     }
 
     /**
@@ -234,8 +235,6 @@ class Datagram extends Socket implements DatagramInterface
             } catch (Exception $exception) {
                 $this->deferred->reject($exception);
             }
-
-            $this->deferred = null;
         });
     }
     
@@ -260,7 +259,6 @@ class Datagram extends Socket implements DatagramInterface
                     $written = $this->sendTo($resource, $data, $peer, true);
                 } catch (Exception $exception) {
                     $deferred->reject($exception);
-                    $this->free($exception);
                     return;
                 }
 
