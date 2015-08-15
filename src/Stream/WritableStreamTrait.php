@@ -3,7 +3,6 @@ namespace Icicle\Socket\Stream;
 
 use Exception;
 use Icicle\Loop;
-use Icicle\Promise;
 use Icicle\Promise\Deferred;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\FailureException;
@@ -30,7 +29,14 @@ trait WritableStreamTrait
      * @var \Icicle\Loop\Events\SocketEventInterface
      */
     private $await;
-    
+
+    /**
+     * Determines if the stream is still open.
+     *
+     * @return bool
+     */
+    abstract public function isOpen();
+
     /**
      * @return resource Stream socket resource.
      */
@@ -68,10 +74,9 @@ trait WritableStreamTrait
                 $deferred->resolve($previous);
             } else {
                 try {
-                    $written = $this->send($resource, $data, true);
+                    $written = $this->push($resource, $data, true);
                 } catch (Exception $exception) {
                     $deferred->reject($exception);
-                    $this->free($exception);
                     return;
                 }
 
@@ -108,15 +113,14 @@ trait WritableStreamTrait
     {
         $this->writable = false;
 
-        if (null !== $this->await) {
-            $this->await->free();
-            $this->await = null;
-        }
+        $this->await->free();
 
         while (!$this->writeQueue->isEmpty()) {
             /** @var \Icicle\Promise\Deferred $deferred */
             list( , , , $deferred) = $this->writeQueue->shift();
-            $deferred->reject($exception ?: new ClosedException('The stream was unexpectedly closed.'));
+            $deferred->getPromise()->cancel(
+                $exception = $exception ?: new ClosedException('The stream was unexpectedly closed.')
+            );
         }
     }
 
@@ -125,43 +129,70 @@ trait WritableStreamTrait
      */
     public function write($data, $timeout = 0)
     {
+        return $this->send($data, $timeout, false);
+    }
+
+    /**
+     * Writes the given data to the stream, immediately making the stream unwritable if $end is true.
+     *
+     * @param string $data
+     * @param int $timeout
+     * @param bool $end
+     *
+     * @return \Generator
+     *
+     * @throws \Icicle\Stream\Exception\UnwritableException If the stream is no longer writable.
+     * @throws \Icicle\Stream\Exception\ClosedException If the stream has been closed.
+     */
+    private function send($data, $timeout = 0, $end = false)
+    {
         if (!$this->isWritable()) {
-            return Promise\reject(new UnwritableException('The stream is no longer writable.'));
+            throw new UnwritableException('The stream is no longer writable.');
         }
 
         $data = (string) $data;
         $length = strlen($data);
         $written = 0;
-        
-        if ($this->writeQueue->isEmpty()) {
-            if (0 === $length) {
-                return Promise\resolve($written);
+
+        if ($end) {
+            $this->writable = false;
+        }
+
+        try {
+            if ($this->writeQueue->isEmpty()) {
+                if (0 === $length) {
+                    yield $written;
+                    return;
+                }
+
+                $written = $this->push($this->getResource(), $data, false);
+
+                if ($length <= $written) {
+                    yield $written;
+                    return;
+                }
+
+                $data = substr($data, $written);
             }
 
-            try {
-                $written = $this->send($this->getResource(), $data, false);
-            } catch (Exception $exception) {
+            $deferred = new Deferred();
+            $this->writeQueue->push([$data, $written, $timeout, $deferred]);
+
+            if (!$this->await->isPending()) {
+                $this->await->listen($timeout);
+            }
+
+            yield $deferred->getPromise();
+        } catch (Exception $exception) {
+            if ($this->isOpen()) {
                 $this->free($exception);
-                return Promise\reject($exception);
             }
-
-            if ($length <= $written) {
-                return Promise\resolve($written);
+            throw $exception;
+        } finally {
+            if ($end && $this->isOpen()) {
+                $this->close();
             }
-            
-            $data = substr($data, $written);
         }
-
-        $deferred = new Deferred(function (Exception $exception) {
-            $this->free($exception);
-        });
-        $this->writeQueue->push([$data, $written, $timeout, $deferred]);
-
-        if (!$this->await->isPending()) {
-            $this->await->listen($timeout);
-        }
-
-        return $deferred->getPromise();
     }
     
     /**
@@ -169,15 +200,9 @@ trait WritableStreamTrait
      */
     public function end($data = '', $timeout = 0)
     {
-        $promise = $this->write($data, $timeout);
-        
-        $this->writable = false;
-        
-        return $promise->cleanup(function () {
-            $this->close();
-        });
+        return $this->send($data, $timeout, true);
     }
-    
+
     /**
      * Returns a promise that is fulfilled when the stream is ready to receive data (output buffer is not full).
      *
@@ -188,25 +213,30 @@ trait WritableStreamTrait
      *
      * @resolve int Always resolves with 0.
      *
-     * @reject \Icicle\Stream\Exception\UnwritableException If the stream is no longer writable.
-     * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
+     * @throws \Icicle\Stream\Exception\UnwritableException If the stream is no longer writable.
+     * @throws \Icicle\Stream\Exception\ClosedException If the stream has been closed.
      */
     protected function await($timeout = 0)
     {
         if (!$this->isWritable()) {
-            return Promise\reject(new UnwritableException('The stream is no longer writable.'));
+            throw new UnwritableException('The stream is no longer writable.');
         }
         
-        $deferred = new Deferred(function (Exception $exception) {
-            $this->free($exception);
-        });
+        $deferred = new Deferred();
         $this->writeQueue->push(['', 0, $timeout, $deferred]);
         
         if (!$this->await->isPending()) {
             $this->await->listen($timeout);
         }
-        
-        return $deferred->getPromise();
+
+        try {
+            yield $deferred->getPromise();
+        } catch (Exception $exception) {
+            if ($this->isOpen()) {
+                $this->free($exception);
+            }
+            throw $exception;
+        }
     }
     
     /**
@@ -226,7 +256,7 @@ trait WritableStreamTrait
      *
      * @throws FailureException If writing fails.
      */
-    private function send($resource, $data, $strict = false)
+    private function push($resource, $data, $strict = false)
     {
         // Error reporting suppressed since fwrite() emits E_WARNING if the pipe is broken or the buffer is full.
         $written = @fwrite($resource, $data, SocketInterface::CHUNK_SIZE);
