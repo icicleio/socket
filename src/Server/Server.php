@@ -3,7 +3,6 @@ namespace Icicle\Socket\Server;
 
 use Exception;
 use Icicle\Loop;
-use Icicle\Promise;
 use Icicle\Promise\Deferred;
 use Icicle\Socket\Client\Client;
 use Icicle\Socket\Exception\BusyError;
@@ -45,7 +44,22 @@ class Server extends Socket implements ServerInterface
     {
         parent::__construct($socket);
         
-        $this->poll = $this->createPoll($socket);
+        $this->poll = Loop\poll($socket, function ($resource) {
+            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
+            $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
+
+            // Having difficulty finding a test to cover this scenario, but it has been seen in production.
+            if (!$client) {
+                $this->poll->listen(); // Accept failed, let's go around again.
+                return;
+            }
+
+            try {
+                $this->deferred->resolve($this->createClient($client));
+            } catch (Exception $exception) {
+                $this->deferred->reject($exception);
+            }
+        });
         
         try {
             list($this->address, $this->port) = $this->getName(false);
@@ -69,18 +83,12 @@ class Server extends Socket implements ServerInterface
      */
     protected function free(Exception $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-            $this->poll = null;
-        }
+        $this->poll->free();
 
         if (null !== $this->deferred) {
-            if (null === $exception) {
-                $exception = new ClosedException('The stream was unexpectedly closed.');
-            }
-
-            $this->deferred->reject($exception);
-            $this->deferred = null;
+            $this->deferred->getPromise()->cancel(
+                $exception ?: new ClosedException('The server was unexpectedly closed.')
+            );
         }
 
         parent::close();
@@ -92,21 +100,24 @@ class Server extends Socket implements ServerInterface
     public function accept()
     {
         if (null !== $this->deferred) {
-            return Promise\reject(new BusyError('Already waiting on server.'));
+            throw new BusyError('Already waiting on server.');
         }
         
         if (!$this->isOpen()) {
-            return Promise\reject(new UnavailableException('The server has been closed.'));
+            throw new UnavailableException('The server has been closed.');
         }
 
         $this->poll->listen();
         
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
-            $this->deferred = null;
         });
-        
-        return $this->deferred->getPromise();
+
+        try {
+            yield $this->deferred->getPromise();
+        } finally {
+            $this->deferred = null;
+        }
     }
     
     /**
@@ -133,32 +144,5 @@ class Server extends Socket implements ServerInterface
     protected function createClient($socket)
     {
         return new Client($socket);
-    }
-
-    /**
-     * @param resource $socket Stream socket server resource.
-     *
-     * @return \Icicle\Loop\Events\SocketEventInterface
-     */
-    private function createPoll($socket)
-    {
-        return Loop\poll($socket, function ($resource) {
-            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-            $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
-
-            // Having difficulty finding a test to cover this scenario, but it has been seen in production.
-            if (!$client) {
-                $this->poll->listen(); // Accept failed, let's go around again.
-                return;
-            }
-
-            try {
-                $this->deferred->resolve($this->createClient($client));
-            } catch (Exception $exception) {
-                $this->deferred->reject($exception);
-            }
-
-            $this->deferred = null;
-        });
     }
 }
