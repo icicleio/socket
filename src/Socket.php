@@ -32,12 +32,12 @@ abstract class Socket implements SocketInterface
     }
     
     /**
-     * Calls fclose() if not previously called on socket.
+     * Calls close() on the object if it was not already closed.
      */
     public function __destruct()
     {
-        if (is_resource($this->socket)) {
-            fclose($this->socket);
+        if (null !== $this->socket) {
+            $this->close();
         }
     }
     
