@@ -80,7 +80,7 @@ class Connector implements ConnectorInterface
             );
         }
         
-        yield new Promise(function ($resolve, $reject) use ($socket, $timeout) {
+        yield new Promise(function (callable $resolve, callable $reject) use ($socket, $timeout) {
             $await = Loop\await($socket, function ($resource, $expired) use (&$await, $resolve, $reject) {
                 /** @var \Icicle\Loop\Events\SocketEventInterface $await */
                 $await->free();
@@ -94,6 +94,10 @@ class Connector implements ConnectorInterface
             });
             
             $await->listen($timeout);
+
+            return function () use ($await) {
+                $await->free();
+            };
         });
     }
 }
