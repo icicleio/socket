@@ -60,13 +60,13 @@ class Client extends DuplexStream implements ClientInterface
         do {
             // Error reporting suppressed since stream_socket_enable_crypto() emits E_WARNING on failure.
             $result = @stream_socket_enable_crypto($resource, (bool) $method, $method);
-
-            if ($result) {
-                $this->crypto = $method;
-                yield $this;
-                return;
-            }
         } while (0 === $result && !(yield $this->poll($timeout)));
+
+        if ($result) {
+            $this->crypto = $method;
+            yield $this;
+            return;
+        }
 
         $message = 'Failed to enable crypto.';
         if ($error = error_get_last()) {
