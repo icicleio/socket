@@ -51,8 +51,6 @@ class Client extends DuplexStream implements ClientInterface
      */
     public function enableCrypto(int $method, float $timeout = 0): \Generator
     {
-        $method = (int) $method;
-
         yield $this->await($timeout);
 
         $resource = $this->getResource();
@@ -60,12 +58,12 @@ class Client extends DuplexStream implements ClientInterface
         do {
             // Error reporting suppressed since stream_socket_enable_crypto() emits E_WARNING on failure.
             $result = @stream_socket_enable_crypto($resource, (bool) $method, $method);
-
-            if ($result) {
-                $this->crypto = $method;
-                return $this;
-            }
         } while (0 === $result && !(yield $this->poll($timeout)));
+
+        if ($result) {
+            $this->crypto = $method;
+            return $this;
+        }
 
         $message = 'Failed to enable crypto.';
         if ($error = error_get_last()) {

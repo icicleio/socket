@@ -6,12 +6,14 @@ use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\{Deferred, Exception\TimeoutException};
 use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
 use Icicle\Socket\Socket;
-use Icicle\Stream\{ParserTrait, Structures\Buffer};
+use Icicle\Stream\ParserTrait;
 use Throwable;
 
 class Datagram extends Socket implements DatagramInterface
 {
     use ParserTrait;
+
+    const MAX_PACKET_SIZE = 512;
 
     /**
      * @var string
@@ -57,7 +59,7 @@ class Datagram extends Socket implements DatagramInterface
         
         stream_set_read_buffer($socket, 0);
         stream_set_write_buffer($socket, 0);
-        stream_set_chunk_size($socket, self::CHUNK_SIZE);
+        stream_set_chunk_size($socket, self::MAX_PACKET_SIZE);
         
         $this->writeQueue = new \SplQueue();
         
@@ -137,7 +139,7 @@ class Datagram extends Socket implements DatagramInterface
 
         $this->length = $this->parseLength($length);
         if (0 === $this->length) {
-            $this->length = self::CHUNK_SIZE;
+            $this->length = self::MAX_PACKET_SIZE;
         }
 
         $this->poll->listen($timeout);
@@ -162,22 +164,22 @@ class Datagram extends Socket implements DatagramInterface
             throw new UnavailableException('The datagram is no longer writable.');
         }
         
-        $data = new Buffer($data);
+        $length = strlen($data);
         $written = 0;
         $peer = $this->makeName($address, $port);
         
         if ($this->writeQueue->isEmpty()) {
-            if ($data->isEmpty()) {
+            if (0 === $length) {
                 return $written;
             }
 
             $written = $this->sendTo($this->getResource(), $data, $peer, false);
 
-            if ($data->getLength() <= $written) {
+            if ($length <= $written) {
                 return $written;
             }
             
-            $data->remove($written);
+            $data = substr($data, $written);
         }
 
         $deferred = new Deferred();
@@ -240,13 +242,12 @@ class Datagram extends Socket implements DatagramInterface
     private function createAwait($socket): SocketEventInterface
     {
         return Loop\await($socket, function ($resource) use (&$onWrite) {
-            /**
-             * @var \Icicle\Stream\Structures\Buffer $data
-             * @var \Icicle\Promise\Deferred $deferred
-             */
+            /** @var \Icicle\Promise\Deferred $deferred */
             list($data, $previous, $peer, $deferred) = $this->writeQueue->shift();
-            
-            if ($data->isEmpty()) {
+
+            $length = strlen($data);
+
+            if (0 === $length) {
                 $deferred->resolve($previous);
             } else {
                 try {
@@ -256,10 +257,10 @@ class Datagram extends Socket implements DatagramInterface
                     return;
                 }
 
-                if ($data->getLength() <= $written) {
+                if ($length <= $written) {
                     $deferred->resolve($written + $previous);
                 } else {
-                    $data->remove($written);
+                    $data = substr($data, $written);
                     $written += $previous;
                     $this->writeQueue->unshift([$data, $written, $peer, $deferred]);
                 }
@@ -273,17 +274,17 @@ class Datagram extends Socket implements DatagramInterface
 
     /**
      * @param resource $resource
-     * @param Buffer $data
+     * @param string $data
      * @param string $peer
      * @param bool $strict If true, fail if no bytes are written.
      *
      * @return int Number of bytes written.
      *
-     * @throws FailureException If sending the data fails.
+     * @throws \Icicle\Socket\Exception\FailureException If sending the data fails.
      */
-    private function sendTo($resource, Buffer $data, string $peer, bool $strict = false): int
+    private function sendTo($resource, string $data, string $peer, bool $strict = false): int
     {
-        $written = stream_socket_sendto($resource, $data->peek(self::CHUNK_SIZE), 0, $peer);
+        $written = stream_socket_sendto($resource, substr($data, 0, self::MAX_PACKET_SIZE), 0, $peer);
 
         // Having difficulty finding a test to cover this scenario, but the check seems appropriate.
         if (false === $written || -1 === $written || (0 === $written && $strict)) {

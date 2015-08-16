@@ -3,6 +3,7 @@ namespace Icicle\Tests\Socket\Client;
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Client\Client;
 use Icicle\Socket\Client\ClientInterface;
@@ -151,14 +152,10 @@ class ConnectorTest extends TestCase
     
     public function setUp()
     {
+        Loop\loop(new SelectLoop());
         $this->connector = new Connector();
     }
-    
-    public function tearDown()
-    {
-        Loop\clear();
-    }
-    
+
     public function testConnect()
     {
         $server = $this->createServer();

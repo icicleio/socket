@@ -27,9 +27,7 @@
     "minimum-stability": "dev",
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.x-dev",
-            "dev-v1.x": "1.x-dev",
-            "dev-v0.1.x": "0.1.x-dev"
+            "dev-master": "2.0.x-dev"
         }
     },
     "autoload": {
