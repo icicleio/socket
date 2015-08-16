@@ -158,7 +158,7 @@ trait WritableStreamTestTrait
      */
     public function testCloseAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
             $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
@@ -181,7 +181,7 @@ trait WritableStreamTestTrait
      */
     public function testWriteAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
             $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
@@ -216,7 +216,7 @@ trait WritableStreamTestTrait
      */
     public function testEndAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
             $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
@@ -249,7 +249,7 @@ trait WritableStreamTestTrait
      */
     public function testWriteEmptyStringAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
             $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
@@ -277,7 +277,7 @@ trait WritableStreamTestTrait
      */
     public function testWriteAfterPendingWriteAfterEof()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
             $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
