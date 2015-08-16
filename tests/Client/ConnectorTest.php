@@ -216,7 +216,7 @@ class ConnectorTest extends TestCase
     {
         $server = $this->createServerUnix(self::HOST_UNIX);
 
-        $promise = new Coroutine($this->connector->connect(self::HOST_UNIX, null));
+        $promise = new Coroutine($this->connector->connect(self::HOST_UNIX, -1));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')

@@ -19,11 +19,11 @@ class Connector implements ConnectorInterface
     /**
      * {@inheritdoc}
      */
-    public function connect($host, $port, array $options = null)
+    public function connect($host, $port, array $options = [])
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
+            : (-1 === $port ? 'unix' : 'tcp');
         $allowSelfSigned = isset($options['allow_self_signed'])
             ? (bool) $options['allow_self_signed']
             : self::DEFAULT_ALLOW_SELF_SIGNED;

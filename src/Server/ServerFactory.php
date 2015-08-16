@@ -19,11 +19,11 @@ class ServerFactory implements ServerFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function create($host, $port, array $options = null)
+    public function create($host, $port, array $options = [])
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
+            : (-1 === $port ? 'unix' : 'tcp');
         $queue = isset($options['backlog']) ? (int) $options['backlog'] : self::DEFAULT_BACKLOG;
         $pem = isset($options['pem']) ? (string) $options['pem'] : null;
         $passphrase = isset($options['passphrase']) ? (string) $options['passphrase'] : null;
