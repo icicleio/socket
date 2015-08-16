@@ -33,7 +33,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function parseAddress($address): string
+    protected function parseAddress(string $address): string
     {
         if (false !== strpos($address, ':')) { // IPv6 address
             return '[' . trim($address, '[]') . ']';
@@ -50,7 +50,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function makeName($address, $port): string
+    protected function makeName(string $address, int $port): string
     {
         if (-1 === $port) { // Unix socket.
             return $address;
@@ -68,7 +68,7 @@ trait ParserTrait
      *
      * @return string
      */
-    protected function makeUri(string $protocol, $address, $port): string
+    protected function makeUri(string $protocol, string $address, int $port): string
     {
         if (-1 === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);

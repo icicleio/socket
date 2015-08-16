@@ -17,7 +17,7 @@ class Connector implements ConnectorInterface
     /**
      * {@inheritdoc}
      */
-    public function connect($host, $port, array $options = []): \Generator
+    public function connect(string $host, int $port, array $options = []): \Generator
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
@@ -78,7 +78,7 @@ class Connector implements ConnectorInterface
             );
         }
         
-        return yield new Promise(function ($resolve, $reject) use ($socket, $timeout) {
+        return yield new Promise(function (callable $resolve, callable $reject) use ($socket, $timeout) {
             $await = Loop\await($socket, function ($resource, $expired) use (&$await, $resolve, $reject) {
                 /** @var \Icicle\Loop\Events\SocketEventInterface $await */
                 $await->free();

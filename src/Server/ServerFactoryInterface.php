@@ -26,5 +26,5 @@ interface ServerFactoryInterface
      * @throws \Icicle\Socket\Exception\InvalidArgumentError If PEM file path given does not exist.
      * @throws \Icicle\Socket\Exception\FailureException If the server socket could not be created.
      */
-    public function create($host, $port, array $options = []): ServerInterface;
+    public function create(string $host, int $port, array $options = []): ServerInterface;
 }
