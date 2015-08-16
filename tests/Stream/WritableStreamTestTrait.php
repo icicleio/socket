@@ -117,8 +117,6 @@ trait WritableStreamTestTrait
 
         $promise->done($callback);
 
-        $this->assertTrue($writable->isOpen());
-
         $promise = new Coroutine($readable->read());
 
         $callback = $this->createCallback(1);

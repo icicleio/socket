@@ -4,6 +4,7 @@ namespace Icicle\Tests\Socket\Client;
 use Exception;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Promise;
 use Icicle\Socket\Client\Client;
 use Icicle\Socket\Exception\FailureException;
@@ -118,9 +119,9 @@ class ClientTest extends TestCase
         return $socket;
     }
     
-    public function tearDown()
+    public function setUp()
     {
-        Loop\clear();
+        Loop\loop(new SelectLoop());
     }
     
     public function testInvalidSocketType()
