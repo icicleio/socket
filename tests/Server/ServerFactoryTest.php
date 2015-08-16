@@ -1,7 +1,9 @@
 <?php
 namespace Icicle\Tests\Socket\Server;
 
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerFactory;
@@ -24,13 +26,12 @@ class ServerFactoryTest extends TestCase
     
     public function setUp()
     {
+        Loop\loop(new SelectLoop());
         $this->factory = new ServerFactory();
     }
     
     public function tearDown()
     {
-        Loop\clear();
-        
         if ($this->server instanceof Server) {
             $this->server->close();
         }
@@ -111,7 +112,7 @@ class ServerFactoryTest extends TestCase
         
         $this->assertInstanceOf(ServerInterface::class, $this->server);
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $client = stream_socket_client(
             'tcp://' . self::HOST_IPv4 . ':' . self::PORT,

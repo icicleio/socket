@@ -1,6 +1,7 @@
 <?php
 namespace Icicle\Tests\Socket\Stream;
 
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Exception\FailureException;
@@ -20,7 +21,7 @@ trait WritableStreamTestTrait
 
         $string = "{'New String\0To Write'}\r\n";
 
-        $promise = $writable->write($string);
+        $promise = new Coroutine($writable->write($string));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -30,7 +31,7 @@ trait WritableStreamTestTrait
 
         Loop\run();
 
-        $promise = $readable->read();
+        $promise = new Coroutine($readable->read());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -52,7 +53,7 @@ trait WritableStreamTestTrait
 
         $this->assertFalse($writable->isWritable());
 
-        $promise = $writable->write(StreamTest::WRITE_STRING);
+        $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -70,7 +71,7 @@ trait WritableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $writable->write('');
+        $promise = new Coroutine($writable->write(''));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -80,7 +81,7 @@ trait WritableStreamTestTrait
 
         Loop\run();
 
-        $promise = $writable->write('0');
+        $promise = new Coroutine($writable->write('0'));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -88,7 +89,7 @@ trait WritableStreamTestTrait
 
         $promise->done($callback);
 
-        $promise = $readable->read(1);
+        $promise = new Coroutine($readable->read(1));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -106,7 +107,7 @@ trait WritableStreamTestTrait
     {
         list($readable, $writable) = $this->createStreams();
 
-        $promise = $writable->end(StreamTest::WRITE_STRING);
+        $promise = new Coroutine($writable->end(StreamTest::WRITE_STRING));
 
         $this->assertFalse($writable->isWritable());
 
@@ -118,7 +119,7 @@ trait WritableStreamTestTrait
 
         $this->assertTrue($writable->isOpen());
 
-        $promise = $readable->read();
+        $promise = new Coroutine($readable->read());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -128,7 +129,6 @@ trait WritableStreamTestTrait
 
         Loop\run();
 
-        $this->assertFalse($writable->isWritable());
         $this->assertFalse($writable->isOpen());
     }
 
@@ -140,7 +140,8 @@ trait WritableStreamTestTrait
         list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING, StreamTest::TIMEOUT);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING, StreamTest::TIMEOUT));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
         $callback = $this->createCallback(1);
@@ -157,10 +158,11 @@ trait WritableStreamTestTrait
      */
     public function testCloseAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
         $writable->close();
@@ -179,10 +181,11 @@ trait WritableStreamTestTrait
      */
     public function testWriteAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
         $buffer = '';
@@ -191,7 +194,7 @@ trait WritableStreamTestTrait
             $buffer .= '1';
         }
 
-        $promise = $writable->write($buffer);
+        $promise = new Coroutine($writable->write($buffer));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -202,7 +205,7 @@ trait WritableStreamTestTrait
         $this->assertTrue($promise->isPending());
 
         while ($promise->isPending()) {
-            $readable->read(); // Pull more data out of the buffer.
+            new Coroutine($readable->read()); // Pull more data out of the buffer.
             Loop\tick();
         }
     }
@@ -213,13 +216,14 @@ trait WritableStreamTestTrait
      */
     public function testEndAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
-        $promise = $writable->end(StreamTest::WRITE_STRING);
+        $promise = new Coroutine($writable->end(StreamTest::WRITE_STRING));
 
         $this->assertFalse($writable->isWritable());
 
@@ -232,7 +236,7 @@ trait WritableStreamTestTrait
         $this->assertTrue($promise->isPending());
 
         while ($promise->isPending()) {
-            $readable->read(StreamTest::CHUNK_SIZE); // Pull more data out of the buffer.
+            new Coroutine($readable->read(StreamTest::CHUNK_SIZE)); // Pull more data out of the buffer.
             Loop\tick();
         }
 
@@ -245,13 +249,14 @@ trait WritableStreamTestTrait
      */
     public function testWriteEmptyStringAfterPendingWrite()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
-        $promise = $writable->write('');
+        $promise = new Coroutine($writable->write(''));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -262,7 +267,7 @@ trait WritableStreamTestTrait
         $this->assertTrue($promise->isPending());
 
         while ($promise->isPending()) {
-            $readable->read(); // Pull more data out of the buffer.
+            new Coroutine($readable->read()); // Pull more data out of the buffer.
             Loop\tick();
         }
     }
@@ -272,14 +277,15 @@ trait WritableStreamTestTrait
      */
     public function testWriteAfterPendingWriteAfterEof()
     {
-        list($readable, $writable) = $this->createStreams(StreamTest::HWM);
+        list($readable, $writable) = $this->createStreams();
 
         do { // Write until a pending promise is returned.
-            $promise = $writable->write(StreamTest::WRITE_STRING);
+            $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
+            Loop\tick(false);
         } while (!$promise->isPending());
 
         // Extra write to ensure queue is not empty when write callback is called.
-        $promise = $writable->write(StreamTest::WRITE_STRING);
+        $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
 
         $readable->close(); // Close readable stream.
 
@@ -298,7 +304,7 @@ trait WritableStreamTestTrait
         // Use fclose() manually since $writable->close() will prevent behavior to be tested.
         fclose($writable->getResource());
 
-        $promise = $writable->write(StreamTest::WRITE_STRING);
+        $promise = new Coroutine($writable->write(StreamTest::WRITE_STRING));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')

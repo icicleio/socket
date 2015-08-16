@@ -333,7 +333,8 @@ class ClientTest extends TestCase
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
             ->then(function (Client $client) {
-                $client->end();
+                $coroutine = new Coroutine($client->end());
+                $coroutine->done();
                 return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
             });
 
@@ -400,7 +401,8 @@ class ClientTest extends TestCase
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new Client($socket);
-                $socket->write('Test string');
+                $coroutine = new Coroutine($socket->write('Test string'));
+                $coroutine->done();
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })

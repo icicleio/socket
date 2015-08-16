@@ -2,7 +2,9 @@
 namespace Icicle\Tests\Socket\Server;
 
 use Exception;
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
@@ -21,11 +23,14 @@ class ServerTest extends TestCase
      * @var \Icicle\Socket\Server\Server|null
      */
     protected $server;
-    
+
+    public function setUp()
+    {
+        Loop\loop(new SelectLoop());
+    }
+
     public function tearDown()
     {
-        Loop\clear();
-        
         if ($this->server instanceof Server) {
             $this->server->close();
         }
@@ -64,7 +69,7 @@ class ServerTest extends TestCase
     {
         $this->server = $this->createServer();
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $client = stream_socket_client(
             'tcp://' . self::HOST_IPv4 . ':' . self::PORT,
@@ -94,7 +99,7 @@ class ServerTest extends TestCase
         
         $this->server->close();
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -112,7 +117,7 @@ class ServerTest extends TestCase
     {
         $this->server = $this->createServer();
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $this->server->close();
         
@@ -134,7 +139,7 @@ class ServerTest extends TestCase
         
         $this->server = $this->createServer();
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $promise->cancel($exception);
         
@@ -154,9 +159,9 @@ class ServerTest extends TestCase
     {
         $this->server = $this->createServer();
         
-        $promise1 = $this->server->accept();
+        $promise1 = new Coroutine($this->server->accept());
         
-        $promise2 = $this->server->accept();
+        $promise2 = new Coroutine($this->server->accept());
         
         $client = stream_socket_client(
             'tcp://' . self::HOST_IPv4 . ':' . self::PORT,
@@ -190,7 +195,7 @@ class ServerTest extends TestCase
     {
         $this->server = $this->createServer();
         
-        $promise = $this->server->accept();
+        $promise = new Coroutine($this->server->accept());
         
         $client = stream_socket_client(
             'tcp://' . self::HOST_IPv4 . ':' . self::PORT,

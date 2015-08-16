@@ -3,8 +3,7 @@ namespace Icicle\Socket\Stream;
 
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
-use Icicle\Promise;
-use Icicle\Promise\{Deferred, Exception\TimeoutException, PromiseInterface};
+use Icicle\Promise\{Deferred, Exception\TimeoutException};
 use Icicle\Socket\{Exception\FailureException, SocketInterface};
 use Icicle\Stream\Exception\{BusyError, ClosedException, UnreadableException};
 use Icicle\Stream\{PipeTrait, Structures\Buffer};
@@ -35,9 +34,9 @@ trait ReadableStreamTrait
     private $byte;
 
     /**
-     * @var \Icicle\Stream\Structures\Buffer
+     * @var string
      */
-    private $buffer;
+    private $buffer = '';
 
     /**
      * Determines if the stream is still open.
@@ -73,9 +72,8 @@ trait ReadableStreamTrait
     {
         stream_set_read_buffer($socket, 0);
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
-        
+
         $this->poll = $this->createPoll($socket);
-        $this->buffer = new Buffer();
     }
     
     /**
@@ -85,28 +83,26 @@ trait ReadableStreamTrait
      */
     private function detach(Throwable $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-            $this->poll = null;
-        }
-        
+        $this->poll->free();
+
         if (null !== $this->deferred) {
-            $this->deferred->reject($exception ?: new ClosedException('The stream was unexpectedly closed.'));
-            $this->deferred = null;
+            $this->deferred->getPromise()->cancel(
+                $exception ?: new ClosedException('The stream was unexpectedly closed.')
+            );
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function read(int $length = 0, $byte = null, float $timeout = 0): PromiseInterface
+    public function read(int $length = 0, $byte = null, float $timeout = 0): \Generator
     {
         if (null !== $this->deferred) {
-            return Promise\reject(new BusyError('Already waiting on stream.'));
+            throw new BusyError('Already waiting on stream.');
         }
         
         if (!$this->isReadable()) {
-            return Promise\reject(new UnreadableException('The stream is no longer readable.'));
+            throw new UnreadableException('The stream is no longer readable.');
         }
 
         $this->length = $this->parseLength($length);
@@ -121,22 +117,27 @@ trait ReadableStreamTrait
         $data = $this->fetch($resource);
 
         if ('' !== $data) {
-            return Promise\resolve($data);
+            yield $data;
+            return;
         }
 
         if ($this->eof($resource)) { // Close only if no data was read and at EOF.
             $this->close();
-            return Promise\resolve($data); // Resolve with empty string on EOF.
+            yield $data; // Resolve with empty string on EOF.
+            return;
         }
 
         $this->poll->listen($timeout);
-        
+
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
-            $this->deferred = null;
         });
-        
-        return $this->deferred->getPromise();
+
+        try {
+            yield $this->deferred->getPromise();
+        } finally {
+            $this->deferred = null;
+        }
     }
     
     /**
@@ -151,24 +152,24 @@ trait ReadableStreamTrait
      *
      * @resolve string Empty string.
      *
-     * @reject \Icicle\Promise\Exception\TimeoutException If the operation times out.
-     * @reject \Icicle\Socket\Exception\FailureException If the stream buffer is not empty.
-     * @reject \Icicle\Stream\Exception\BusyError If a read was already pending on the stream.
-     * @reject \Icicle\Stream\Exception\UnreadableException If the stream is no longer readable.
-     * @reject \Icicle\Stream\Exception\ClosedException If the stream has been closed.
+     * @throws \Icicle\Promise\Exception\TimeoutException If the operation times out.
+     * @throws \Icicle\Socket\Exception\FailureException If the stream buffer is not empty.
+     * @throws \Icicle\Stream\Exception\BusyError If a read was already pending on the stream.
+     * @throws \Icicle\Stream\Exception\UnreadableException If the stream is no longer readable.
+     * @throws \Icicle\Stream\Exception\ClosedException If the stream has been closed.
      */
-    protected function poll(float $timeout = 0): PromiseInterface
+    protected function poll(float $timeout = 0): \Generator
     {
         if (null !== $this->deferred) {
-            return Promise\reject(new BusyError('Already waiting on stream.'));
+            throw new BusyError('Already waiting on stream.');
         }
 
         if (!$this->isReadable()) {
-            return Promise\reject(new UnreadableException('The stream is no longer readable.'));
+            throw new UnreadableException('The stream is no longer readable.');
         }
 
-        if (!$this->buffer->isEmpty()) {
-            return Promise\reject(new FailureException('Stream buffer is not empty. Perform another read before polling.'));
+        if ('' !== $this->buffer) {
+            throw new FailureException('Stream buffer is not empty. Perform another read before polling.');
         }
 
         $this->length = 0;
@@ -177,10 +178,13 @@ trait ReadableStreamTrait
 
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
-            $this->deferred = null;
         });
 
-        return $this->deferred->getPromise();
+        try {
+            yield $this->deferred->getPromise();
+        } finally {
+            $this->deferred = null;
+        }
     }
     
     /**
@@ -192,37 +196,6 @@ trait ReadableStreamTrait
     }
 
     /**
-     * @param resource $socket Stream socket resource.
-     *
-     * @return \Icicle\Loop\Events\SocketEventInterface
-     */
-    private function createPoll($socket): SocketEventInterface
-    {
-        return Loop\poll($socket, function ($resource, $expired) {
-            if ($expired) {
-                $this->deferred->reject(new TimeoutException('The connection timed out.'));
-                $this->deferred = null;
-                return;
-            }
-
-            if (0 === $this->length) {
-                $this->deferred->resolve('');
-                $this->deferred = null;
-                return;
-            }
-
-            $data = $this->fetch($resource);
-
-            $this->deferred->resolve($data);
-            $this->deferred = null;
-
-            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
-                $this->close();
-            }
-        });
-    }
-
-    /**
      * Reads data from the stream socket resource based on set length and read-to byte.
      *
      * @param resource $resource
@@ -231,21 +204,25 @@ trait ReadableStreamTrait
      */
     private function fetch($resource): string
     {
-        if ($this->buffer->isEmpty()) {
+        if ('' === $this->buffer) {
             $data = (string) fread($resource, $this->length);
 
             if (null === $this->byte || '' === $data) {
                 return $data;
             }
 
-            $this->buffer->push($data);
+            $this->buffer = $data;
         }
 
-        if (null === $this->byte || false === ($position = $this->buffer->search($this->byte))) {
-            return $this->buffer->shift($this->length);
+        if (null !== $this->byte && false !== ($position = strpos($this->buffer, $this->byte))) {
+            ++$position; // Include byte in result.
+        } else {
+            $position = $this->length;
         }
 
-        return $this->buffer->shift($position + 1);
+        $data = (string) substr($this->buffer, 0, $position);
+        $this->buffer = (string) substr($this->buffer, $position);
+        return $data;
     }
 
     /**
@@ -255,6 +232,34 @@ trait ReadableStreamTrait
      */
     private function eof($resource): bool
     {
-        return feof($resource) && $this->buffer->isEmpty();
+        return feof($resource) && '' === $this->buffer;
+    }
+
+    /**
+     * @param resource $socket
+     *
+     * @return \Icicle\Loop\Events\SocketEventInterface
+     */
+    private function createPoll($socket): SocketEventInterface
+    {
+        return Loop\poll($socket, function ($resource, $expired) {
+            if ($expired) {
+                $this->deferred->reject(new TimeoutException('The connection timed out.'));
+                return;
+            }
+
+            if (0 === $this->length) {
+                $this->deferred->resolve('');
+                return;
+            }
+
+            $data = $this->fetch($resource);
+
+            $this->deferred->resolve($data);
+
+            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
+                $this->close();
+            }
+        });
     }
 }

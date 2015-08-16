@@ -3,8 +3,7 @@ namespace Icicle\Socket\Server;
 
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
-use Icicle\Promise;
-use Icicle\Promise\{Deferred, PromiseInterface};
+use Icicle\Promise\Deferred;
 use Icicle\Socket\Client\{Client, ClientInterface};
 use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
 use Icicle\Socket\Socket;
@@ -67,18 +66,12 @@ class Server extends Socket implements ServerInterface
      */
     protected function free(Throwable $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-            $this->poll = null;
-        }
+        $this->poll->free();
 
         if (null !== $this->deferred) {
-            if (null === $exception) {
-                $exception = new ClosedException('The stream was unexpectedly closed.');
-            }
-
-            $this->deferred->reject($exception);
-            $this->deferred = null;
+            $this->deferred->getPromise()->cancel(
+                $exception ?: new ClosedException('The server was unexpectedly closed.')
+            );
         }
 
         parent::close();
@@ -87,24 +80,27 @@ class Server extends Socket implements ServerInterface
     /**
      * {@inheritdoc}
      */
-    public function accept(): PromiseInterface
+    public function accept(): \Generator
     {
         if (null !== $this->deferred) {
-            return Promise\reject(new BusyError('Already waiting on server.'));
+            throw new BusyError('Already waiting on server.');
         }
         
         if (!$this->isOpen()) {
-            return Promise\reject(new UnavailableException('The server has been closed.'));
+            throw new UnavailableException('The server has been closed.');
         }
 
         $this->poll->listen();
         
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
-            $this->deferred = null;
         });
-        
-        return $this->deferred->getPromise();
+
+        try {
+            yield $this->deferred->getPromise();
+        } finally {
+            $this->deferred = null;
+        }
     }
     
     /**
@@ -134,7 +130,7 @@ class Server extends Socket implements ServerInterface
     }
 
     /**
-     * @param resource $socket Stream socket server resource.
+     * @param resource $socket
      *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
@@ -155,8 +151,6 @@ class Server extends Socket implements ServerInterface
             } catch (Throwable $exception) {
                 $this->deferred->reject($exception);
             }
-
-            $this->deferred = null;
         });
     }
 }

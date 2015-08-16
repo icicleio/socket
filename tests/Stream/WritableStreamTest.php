@@ -31,7 +31,7 @@ class WritableStreamTest extends StreamTest
                 if (0 === $length) {
                     $length = 8192;
                 }
-                return Promise\resolve(fread($read, $length));
+                yield fread($read, $length);
             }));
 
         $readable->method('close')

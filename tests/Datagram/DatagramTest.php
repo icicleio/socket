@@ -2,7 +2,9 @@
 namespace Icicle\Tests\Socket\Datagram;
 
 use Exception;
+use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Datagram\Datagram;
 use Icicle\Socket\Exception\BusyError;
@@ -23,10 +25,13 @@ class DatagramTest extends TestCase
 
     protected $datagram;
 
+    public function setUp()
+    {
+        Loop\loop(new SelectLoop());
+    }
+
     public function tearDown()
     {
-        Loop\clear();
-
         if ($this->datagram instanceof Datagram) {
             $this->datagram->close();
         }
@@ -99,7 +104,7 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -132,7 +137,7 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -158,7 +163,7 @@ class DatagramTest extends TestCase
 
         $this->datagram->close();
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -176,7 +181,7 @@ class DatagramTest extends TestCase
     {
         $this->datagram = $this->createDatagram();
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -208,9 +213,9 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise1 = $this->datagram->receive();
+        $promise1 = new Coroutine($this->datagram->receive());
 
-        $promise2 = $this->datagram->receive();
+        $promise2 = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -254,7 +259,7 @@ class DatagramTest extends TestCase
 
         $length = (int) floor(strlen(self::WRITE_STRING / 2));
 
-        $promise = $this->datagram->receive($length);
+        $promise = new Coroutine($this->datagram->receive($length));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -290,7 +295,7 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise = $this->datagram->receive(-1);
+        $promise = new Coroutine($this->datagram->receive(-1));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -324,11 +329,7 @@ class DatagramTest extends TestCase
             STREAM_CLIENT_CONNECT
         );
 
-        if (0 >= stream_socket_sendto($client, self::WRITE_STRING)) {
-            $this->fail('Could not write to datagram.');
-        }
-
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $promise->cancel($exception);
 
@@ -340,7 +341,11 @@ class DatagramTest extends TestCase
 
         Loop\run();
 
-        $promise = $this->datagram->receive();
+        if (0 >= stream_socket_sendto($client, self::WRITE_STRING)) {
+            $this->fail('Could not write to datagram.');
+        }
+
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -364,9 +369,9 @@ class DatagramTest extends TestCase
     {
         $this->datagram = $this->createDatagram();
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
-        Loop\tick();
+        Loop\tick(false);
 
         $this->assertTrue($promise->isPending());
     }
@@ -390,7 +395,7 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -412,7 +417,7 @@ class DatagramTest extends TestCase
             $this->fail('Could not write to datagram.');
         }
 
-        $promise = $this->datagram->receive();
+        $promise = new Coroutine($this->datagram->receive());
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -436,7 +441,7 @@ class DatagramTest extends TestCase
     {
         $this->datagram = $this->createDatagram();
 
-        $promise = $this->datagram->receive(0, self::TIMEOUT);
+        $promise = new Coroutine($this->datagram->receive(0, self::TIMEOUT));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -464,7 +469,7 @@ class DatagramTest extends TestCase
 
         $string = "{'New String\0To Write'}\r\n";
 
-        $promise = $this->datagram->send($address, $port, $string);
+        $promise = new Coroutine($this->datagram->send($address, $port, $string));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -501,7 +506,7 @@ class DatagramTest extends TestCase
 
         $string = "{'New String\0To Write'}\r\n";
 
-        $promise = $this->datagram->send($address, $port, $string);
+        $promise = new Coroutine($this->datagram->send($address, $port, $string));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -538,7 +543,7 @@ class DatagramTest extends TestCase
 
         $string = "{'New String\0To Write'}\r\n";
 
-        $promise = $this->datagram->send($address, $port, $string);
+        $promise = new Coroutine($this->datagram->send($address, $port, $string));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -562,7 +567,7 @@ class DatagramTest extends TestCase
 
         $this->datagram->close();
 
-        $promise = $this->datagram->send(0, 0, self::WRITE_STRING);
+        $promise = new Coroutine($this->datagram->send(0, 0, self::WRITE_STRING));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -588,7 +593,7 @@ class DatagramTest extends TestCase
         $name = stream_socket_get_name($client, false);
         list($address, $port) = explode(':', $name);
 
-        $promise = $this->datagram->send($address, $port, '');
+        $promise = new Coroutine($this->datagram->send($address, $port, ''));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -598,7 +603,7 @@ class DatagramTest extends TestCase
 
         Loop\run();
 
-        $promise = $this->datagram->send($address, $port, '0');
+        $promise = new Coroutine($this->datagram->send($address, $port, '0'));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -636,11 +641,11 @@ class DatagramTest extends TestCase
             $buffer .= self::WRITE_STRING;
         }
 
-        $promise = $this->datagram->send($address, $port, $buffer);
+        $promise = new Coroutine($this->datagram->send($address, $port, $buffer));
 
         $this->assertTrue($promise->isPending());
 
-        $promise = $this->datagram->send($address, $port, self::WRITE_STRING);
+        $promise = new Coroutine($this->datagram->send($address, $port, self::WRITE_STRING));
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -674,7 +679,7 @@ class DatagramTest extends TestCase
             $buffer .= self::WRITE_STRING;
         }
 
-        $promise = $this->datagram->send($address, $port, $buffer);
+        $promise = new Coroutine($this->datagram->send($address, $port, $buffer));
 
         $this->assertTrue($promise->isPending());
 
