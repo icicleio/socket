@@ -11,7 +11,7 @@ class DatagramFactory implements DatagramFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function create($host, $port, array $options = null): DatagramInterface
+    public function create($host, $port, array $options = []): DatagramInterface
     {
         $context = [];
         

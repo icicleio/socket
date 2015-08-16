@@ -29,16 +29,12 @@ trait ParserTrait
     /**
      * Formats given address into a string. Converts integer to IPv4 address, wraps IPv6 address in brackets.
      *
-     * @param string|int $address
+     * @param string $address
      *
      * @return string
      */
     protected function parseAddress($address): string
     {
-        if (is_int($address)) {
-            return long2ip($address);
-        }
-
         if (false !== strpos($address, ':')) { // IPv6 address
             return '[' . trim($address, '[]') . ']';
         }
@@ -49,14 +45,14 @@ trait ParserTrait
     /**
      * Creates string of format $address[:$port].
      *
-     * @param string|int $address Address or path.
-     * @param int|null $port Port number or null for unix socket.
+     * @param string $address Address or path.
+     * @param int $port Port number or null for unix socket.
      *
      * @return string
      */
     protected function makeName($address, $port): string
     {
-        if (null === $port) { // Unix socket.
+        if (-1 === $port) { // Unix socket.
             return $address;
         }
 
@@ -67,14 +63,14 @@ trait ParserTrait
      * Creates string of format $protocol://$address[:$port].
      *
      * @param string $protocol Protocol.
-     * @param string|int $address Address or path.
-     * @param int|null $port Port number or null for unix socket.
+     * @param string $address Address or path.
+     * @param int $port Port number or null for unix socket.
      *
      * @return string
      */
     protected function makeUri(string $protocol, $address, $port): string
     {
-        if (null === $port) { // Unix socket.
+        if (-1 === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);
         }
 
