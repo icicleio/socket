@@ -76,25 +76,7 @@ trait ReadableStreamTrait
         stream_set_read_buffer($socket, 0);
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
 
-        $this->poll = Loop\poll($socket, function ($resource, $expired) {
-            if ($expired) {
-                $this->deferred->reject(new TimeoutException('The connection timed out.'));
-                return;
-            }
-
-            if (0 === $this->length) {
-                $this->deferred->resolve('');
-                return;
-            }
-
-            $data = $this->fetch($resource);
-
-            $this->deferred->resolve($data);
-
-            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
-                $this->close();
-            }
-        });
+        $this->poll = $this->createPoll($socket);
     }
     
     /**
@@ -254,5 +236,33 @@ trait ReadableStreamTrait
     private function eof($resource)
     {
         return feof($resource) && '' === $this->buffer;
+    }
+
+    /**
+     * @param resource $socket
+     *
+     * @return \Icicle\Loop\Events\SocketEventInterface
+     */
+    private function createPoll($socket)
+    {
+        return Loop\poll($socket, function ($resource, $expired) {
+            if ($expired) {
+                $this->deferred->reject(new TimeoutException('The connection timed out.'));
+                return;
+            }
+
+            if (0 === $this->length) {
+                $this->deferred->resolve('');
+                return;
+            }
+
+            $data = $this->fetch($resource);
+
+            $this->deferred->resolve($data);
+
+            if ('' === $data && $this->eof($resource)) { // Close only if no data was read and at EOF.
+                $this->close();
+            }
+        });
     }
 }

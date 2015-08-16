@@ -44,22 +44,7 @@ class Server extends Socket implements ServerInterface
     {
         parent::__construct($socket);
         
-        $this->poll = Loop\poll($socket, function ($resource) {
-            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-            $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
-
-            // Having difficulty finding a test to cover this scenario, but it has been seen in production.
-            if (!$client) {
-                $this->poll->listen(); // Accept failed, let's go around again.
-                return;
-            }
-
-            try {
-                $this->deferred->resolve($this->createClient($client));
-            } catch (Exception $exception) {
-                $this->deferred->reject($exception);
-            }
-        });
+        $this->poll = $this->createPoll($socket);
         
         try {
             list($this->address, $this->port) = $this->getName(false);
@@ -144,5 +129,30 @@ class Server extends Socket implements ServerInterface
     protected function createClient($socket)
     {
         return new Client($socket);
+    }
+
+    /**
+     * @param resource $socket
+     *
+     * @return \Icicle\Loop\Events\SocketEventInterface
+     */
+    private function createPoll($socket)
+    {
+        return Loop\poll($socket, function ($resource) {
+            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
+            $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
+
+            // Having difficulty finding a test to cover this scenario, but it has been seen in production.
+            if (!$client) {
+                $this->poll->listen(); // Accept failed, let's go around again.
+                return;
+            }
+
+            try {
+                $this->deferred->resolve($this->createClient($client));
+            } catch (Exception $exception) {
+                $this->deferred->reject($exception);
+            }
+        });
     }
 }

@@ -59,41 +59,7 @@ trait WritableStreamTrait
         
         $this->writeQueue = new \SplQueue();
         
-        $this->await = Loop\await($socket, function ($resource, $expired) {
-            if ($expired) {
-                $this->free(new TimeoutException('Writing to the socket timed out.'));
-                return;
-            }
-
-            /** @var \Icicle\Promise\Deferred $deferred */
-            list($data, $previous, $timeout, $deferred) = $this->writeQueue->shift();
-
-            $length = strlen($data);
-
-            if (0 === $length) {
-                $deferred->resolve($previous);
-            } else {
-                try {
-                    $written = $this->push($resource, $data, true);
-                } catch (Exception $exception) {
-                    $deferred->reject($exception);
-                    return;
-                }
-
-                if ($length <= $written) {
-                    $deferred->resolve($written + $previous);
-                } else {
-                    $data = substr($data, $written);
-                    $written += $previous;
-                    $this->writeQueue->unshift([$data, $written, $timeout, $deferred]);
-                }
-            }
-
-            if (!$this->writeQueue->isEmpty()) {
-                list( , , $timeout) = $this->writeQueue->top();
-                $this->await->listen($timeout);
-            }
-        });
+        $this->await = $this->createAwait($socket);
     }
 
     /**
@@ -270,5 +236,49 @@ trait WritableStreamTrait
         }
 
         return $written;
+    }
+
+    /**
+     * @param resource $socket
+     *
+     * @return \Icicle\Loop\Events\SocketEventInterface
+     */
+    private function createAwait($socket)
+    {
+        return Loop\await($socket, function ($resource, $expired) {
+            if ($expired) {
+                $this->free(new TimeoutException('Writing to the socket timed out.'));
+                return;
+            }
+
+            /** @var \Icicle\Promise\Deferred $deferred */
+            list($data, $previous, $timeout, $deferred) = $this->writeQueue->shift();
+
+            $length = strlen($data);
+
+            if (0 === $length) {
+                $deferred->resolve($previous);
+            } else {
+                try {
+                    $written = $this->push($resource, $data, true);
+                } catch (Exception $exception) {
+                    $deferred->reject($exception);
+                    return;
+                }
+
+                if ($length <= $written) {
+                    $deferred->resolve($written + $previous);
+                } else {
+                    $data = substr($data, $written);
+                    $written += $previous;
+                    $this->writeQueue->unshift([$data, $written, $timeout, $deferred]);
+                }
+            }
+
+            if (!$this->writeQueue->isEmpty()) {
+                list( , , $timeout) = $this->writeQueue->top();
+                $this->await->listen($timeout);
+            }
+        });
     }
 }
