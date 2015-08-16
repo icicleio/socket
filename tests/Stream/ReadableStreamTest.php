@@ -34,7 +34,7 @@ class ReadableStreamTest extends StreamTest
                 if ($length) {
                     fwrite($write, $data);
                 }
-                yield $length;
+                return yield $length;
             }));
         
         $writable->method('close')

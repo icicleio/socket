@@ -147,7 +147,7 @@ class Datagram extends Socket implements DatagramInterface
         });
 
         try {
-            yield $this->deferred->getPromise();
+            return yield $this->deferred->getPromise();
         } finally {
             $this->deferred = null;
         }
@@ -168,15 +168,13 @@ class Datagram extends Socket implements DatagramInterface
         
         if ($this->writeQueue->isEmpty()) {
             if ($data->isEmpty()) {
-                yield $written;
-                return;
+                return $written;
             }
 
             $written = $this->sendTo($this->getResource(), $data, $peer, false);
 
             if ($data->getLength() <= $written) {
-                yield $written;
-                return;
+                return $written;
             }
             
             $data->remove($written);
@@ -190,7 +188,7 @@ class Datagram extends Socket implements DatagramInterface
         }
 
         try {
-            yield $deferred->getPromise();
+            return yield $deferred->getPromise();
         } catch (Exception $exception) {
             if ($this->isOpen()) {
                 $this->free($exception);

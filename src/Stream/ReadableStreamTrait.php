@@ -117,14 +117,12 @@ trait ReadableStreamTrait
         $data = $this->fetch($resource);
 
         if ('' !== $data) {
-            yield $data;
-            return;
+            return $data;
         }
 
         if ($this->eof($resource)) { // Close only if no data was read and at EOF.
             $this->close();
-            yield $data; // Resolve with empty string on EOF.
-            return;
+            return $data; // Resolve with empty string on EOF.
         }
 
         $this->poll->listen($timeout);
@@ -134,7 +132,7 @@ trait ReadableStreamTrait
         });
 
         try {
-            yield $this->deferred->getPromise();
+            return yield $this->deferred->getPromise();
         } finally {
             $this->deferred = null;
         }
@@ -181,7 +179,7 @@ trait ReadableStreamTrait
         });
 
         try {
-            yield $this->deferred->getPromise();
+            return yield $this->deferred->getPromise();
         } finally {
             $this->deferred = null;
         }

@@ -97,7 +97,7 @@ class Server extends Socket implements ServerInterface
         });
 
         try {
-            yield $this->deferred->getPromise();
+            return yield $this->deferred->getPromise();
         } finally {
             $this->deferred = null;
         }

@@ -6,7 +6,6 @@ use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\{Deferred, Exception\TimeoutException};
 use Icicle\Socket\{Exception\FailureException, SocketInterface};
 use Icicle\Stream\Exception\{ClosedException, UnwritableException};
-use Icicle\Stream\Structures\Buffer;
 use Throwable;
 
 trait WritableStreamTrait
@@ -115,7 +114,6 @@ trait WritableStreamTrait
             throw new UnwritableException('The stream is no longer writable.');
         }
 
-        $data = (string) $data;
         $length = strlen($data);
         $written = 0;
 
@@ -126,15 +124,13 @@ trait WritableStreamTrait
         try {
             if ($this->writeQueue->isEmpty()) {
                 if (0 === $length) {
-                    yield $written;
-                    return;
+                    return $written;
                 }
 
                 $written = $this->push($this->getResource(), $data, false);
 
                 if ($length <= $written) {
-                    yield $written;
-                    return;
+                    return $written;
                 }
 
                 $data = substr($data, $written);
@@ -147,8 +143,8 @@ trait WritableStreamTrait
                 $this->await->listen($timeout);
             }
 
-            yield $deferred->getPromise();
-        } catch (Exception $exception) {
+            return yield $deferred->getPromise();
+        } catch (Throwable $exception) {
             if ($this->isOpen()) {
                 $this->free($exception);
             }
@@ -195,8 +191,8 @@ trait WritableStreamTrait
         }
 
         try {
-            yield $deferred->getPromise();
-        } catch (Exception $exception) {
+            return yield $deferred->getPromise();
+        } catch (Throwable $exception) {
             if ($this->isOpen()) {
                 $this->free($exception);
             }
@@ -260,7 +256,7 @@ trait WritableStreamTrait
             } else {
                 try {
                     $written = $this->push($resource, $data, true);
-                } catch (Exception $exception) {
+                } catch (Throwable $exception) {
                     $deferred->reject($exception);
                     return;
                 }
