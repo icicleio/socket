@@ -1,4 +1,12 @@
 <?php
+
+/*
+ * This file is part of the socket package for Icicle, a library for writing asynchronous code in PHP.
+ *
+ * @copyright 2014-2015 Aaron Piotrowski. All rights reserved.
+ * @license Apache-2.0 See the LICENSE file that was distributed with this source code for more information.
+ */
+
 namespace Icicle\Tests\Socket;
 
 use Icicle\Tests\Socket\Stub\CallbackStub;
@@ -8,14 +16,13 @@ use Icicle\Tests\Socket\Stub\CallbackStub;
  */
 abstract class TestCase extends \PHPUnit_Framework_TestCase
 {
-    const RUNTIME_PRECISION = 2; // Number of decimals to use in runtime calculations/comparisons.
-    
     /**
      * Creates a callback that must be called $count times or the test will fail.
      *
      * @param int $count Number of times the callback should be called.
      *
-     * @return callable Object that is callable and expects to be called the given number of times.
+     * @return callable|\PHPUnit_Framework_MockObject_MockObject Object that is callable and expects to be called the
+     *     given number of times.
      */
     public function createCallback($count)
     {
