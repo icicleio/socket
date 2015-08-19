@@ -33,9 +33,9 @@ You can also manually edit `composer.json` to add this library as a project requ
 }
 ```
 
-The socket component implements network sockets as promise-based streams, server, and datagram. Creating a server and accepting connections is very simple, requiring only a few lines of code.
+The socket component implements network sockets as coroutine-based streams, server, and datagram. Creating a server and accepting connections is very simple, requiring only a few lines of code.
 
-The example below implements a simple HTTP server that responds to any request with `Hello, world!` implemented using a coroutine (see the [Coroutine API documentation](https://github.com/icicleio/icicle/wiki/Coroutines)) and the basic sockets provided by this package.
+The example below implements a simple HTTP server listening on 127.0.0.1:8080 that responds to any request with the contents of the client request as the body of the response. This example is implemented using coroutines (see the [Coroutine API documentation](https://github.com/icicleio/icicle/wiki/Coroutines)) and the basic sockets provided by this package.
 
 ```php
 use Icicle\Coroutine\Coroutine;
@@ -46,25 +46,33 @@ use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
 
-$server =(new ServerFactory())->create('localhost', 8080);
+$server = (new ServerFactory())->create('localhost', 8080);
 
 $generator = function (ServerInterface $server) {
-    echo "Server listening on {$server->getAddress()}:{$server->getPort()}\n";
-    
+    printf("Server listening on %s:%d\n", $server->getAddress(), $server->getPort());
+
     $generator = function (ClientInterface $client) {
-        $response  = "HTTP/1.1 200 OK\r\n";
-        $response .= "Content-Length: 13\r\n";
-        $response .= "Connection: close\r\n";
-        $response .= "\r\n";
-        $response .= "Hello, world!";
-        
-        yield $client->write($response);
-        
+        $request = '';
+        do {
+            $request .= (yield $client->read(0, "\n"));
+        } while (substr($request, -4) !== "\r\n\r\n");
+
+        $message = sprintf("Received the following request:\r\n\r\n%s", $request);
+
+        $data  = "HTTP/1.1 200 OK\r\n";
+        $data .= "Content-Type: text/plain\r\n";
+        $data .= sprintf("Content-Length: %d\r\n", strlen($message));
+        $data .= "Connection: close\r\n";
+        $data .= "\r\n";
+        $data .= $message;
+
+        yield $client->write($data);
+
         $client->close();
     };
-    
+
     while ($server->isOpen()) {
-        // Handles client in a separate coroutine so this coroutine is not blocked.
+        // Handle client in a separate coroutine so this coroutine is not blocked.
         $coroutine = new Coroutine($generator(yield $server->accept()));
         $coroutine->done(null, function (Exception $exception) {
             printf("Client error: %s\n", $exception->getMessage());
@@ -122,8 +130,6 @@ Prototypes for object instance methods are described below using the following s
 ClassOrInterfaceName::methodName(ArgumentType $arg): ReturnType
 ```
 
-Note that references in the prototypes below to `PromiseInterface` refer to `Icicle\Promise\PromiseInterface` (see the [Promise API documentation](https://github.com/icicleio/icicle/wiki/Promises) for more information).
-
 ## SocketInterface
 
 All socket classes in this component implement `Icicle\Socket\SocketInterface`.
@@ -148,7 +154,7 @@ Closes the socket, making it unreadable or unwritable.
 
 ## Server
 
-The `Icicle\Socket\Server\Server` class implements `Icicle\Socket\Server\ServerInterface`, a promise-based interface for creating a TCP server and accepting connections.
+The `Icicle\Socket\Server\Server` class implements `Icicle\Socket\Server\ServerInterface`, a coroutine-based interface for creating a TCP server and accepting connections.
 
 #### Server Constructor
 
@@ -166,10 +172,11 @@ Creates a server from a stream socket server resource generated from `stream_soc
 ServerInterface::accept(): Generator
 ```
 
-A coroutine that is resolved with a stream socket resource when a connection is accepted. Often this resource is then used to create a `Icicle\Socket\Client\Client` object.
+A coroutine that is resolved with a `Icicle\Socket\Client\ClientInterface` object when a connection is accepted.
+
 Resolution | Type | Description
 :-: | :-- | :--
-Fulfilled | `Icicle\Socket\Client\ClientInterface` | Accepted client stream socket resource.
+Fulfilled | `Icicle\Socket\Client\ClientInterface` | Accepted client connection.
 Rejected | `Icicle\Socket\Exception\BusyException` | If the server already had an accept pending.
 Rejected | `Icicle\Socket\Exception\UnavailableException` | If the server was previously closed.
 Rejected | `Icicle\Socket\Exception\ClosedException` | If the server is closed during pending accept.
@@ -249,7 +256,7 @@ Creates a writable stream from the given stream socket resource.
 
 ## DuplexStream
 
-`Icicle\Socket\Stream\DuplexStream` implements `Icicle\Stream\DuplexStreamInterface`, making it both a readable stream and a writable stream. It also implements `Icicle\Socket\Stream\DuplexSocketInterface`, adding an optional parameter `float|null $timeout = null` to the stream methods as described in the sections above on [ReadableStream](#readablestream) and [WritableStream](#writablestream).
+`Icicle\Socket\Stream\DuplexStream` implements `Icicle\Stream\DuplexStreamInterface`, making it both a readable stream and a writable stream. It also implements `Icicle\Socket\Stream\DuplexSocketInterface`, adding an optional parameter `float $timeout = 0` to the stream methods as described in the sections above on [ReadableStream](#readablestream) and [WritableStream](#writablestream).
 
 See the [ReadableStreamInterface API documentation](https://github.com/icicleio/stream#readablestreaminterface) and [WritableStreamInterface API documentation](https://github.com/icicleio/stream#writablestreaminterface) for more information on how duplex streams are used.
 
@@ -264,7 +271,7 @@ Creates a duplex stream from the given stream socket resource.
 
 ## Client
 
-`Icicle\Socket\Client\Client` objects implement `Icicle\Socket\Client\ClientInterface` and are used as the fulfillment value of the promise returned by `Icicle\Socket\Server\Server::accept()` ([see documentation above](#accept)). (Note that `Icicle\Socket\Server\Server` can be easily extended and modified to fulfill accept requests with different objects implementing `Icicle\Socket\Client\ClientInterface`.)
+`Icicle\Socket\Client\Client` objects implement `Icicle\Socket\Client\ClientInterface` and are used as the fulfillment value of the coroutine returned by `Icicle\Socket\Server\Server::accept()` ([see documentation above](#accept)). (Note that `Icicle\Socket\Server\Server` can be easily extended and modified to fulfill accept requests with different objects implementing `Icicle\Socket\Client\ClientInterface`.)
 
 The class extends `Icicle\Socket\Stream\DuplexStream`, so it inherits all the readable and writable stream methods as well as adding those below.
 
@@ -284,7 +291,7 @@ Creates a client object from the given stream socket resource.
 ClientInterface::enableCrypto(int $method, float $timeout = 0): Generator
 ```
 
-Enables encryption on the socket. For resources created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\ServerInterface::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Client\ConnectorInterface::connect()`).
+Enables encryption on the socket. For Client objects created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\ServerInterface::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Client\ConnectorInterface::connect()`).
 
 ---
 
@@ -328,7 +335,7 @@ Returns the remote port.
 
 ## Connector
 
-The `Icicle\Socket\Client\Connector` class (implements `Icicle\Socket\Client\ConnectorInterface`) asynchronously connects to a remote server, returning a promise that is fulfilled with an instance of `Icicle\Socket\Client\Client` when the connection is successfully established. Note that the *host should be given as an IP address*, as DNS lookups performed by PHP are synchronous (blocking). If you wish to use domain names instead of IPs, see `Icicle\Dns\Connector\Connector` in the [DNS component](https://github.com/icicleio/dns).
+The `Icicle\Socket\Client\Connector` class (implements `Icicle\Socket\Client\ConnectorInterface`) asynchronously connects to a remote server, returning a coroutine that is fulfilled with an instance of `Icicle\Socket\Client\Client` when the connection is successfully established. Note that the *host should be given as an IP address*, as DNS lookups performed by PHP are synchronous (blocking). If you wish to use domain names instead of IPs, see `Icicle\Dns\Connector\Connector` in the [DNS component](https://github.com/icicleio/dns).
 
 #### connect()
 
@@ -359,7 +366,7 @@ Rejected | `Icicle\Promise\Exception\TimeoutException` | If the connection attem
 
 ## Datagram
 
-The `Icicle\Socket\Datagram\Datagram` class implements `Icicle\Socket\Datagram\DatagramInterface`, a promise-based interface for creating a UDP listener and sender.
+The `Icicle\Socket\Datagram\Datagram` class implements `Icicle\Socket\Datagram\DatagramInterface`, a coroutine-based interface for creating a UDP listener and sender.
 
 #### Datagram Constructor
 
@@ -377,7 +384,7 @@ Creates a datagram from a stream socket server resource generated from `stream_s
 DatagramInterface::receive(int $length, float $timeout): Generator
 ```
 
-Returns a promise that is fulfilled with an array when a data is received on the UDP socket (datagram). The array is a 0-indexed array containing the IP address, port, and data received, in that order.
+A coroutine that is fulfilled with an array when a data is received on the UDP socket (datagram). The array is a 0-indexed array containing the IP address, port, and data received, in that order.
 
 Resolution | Type | Description
 :-: | :-- | :--
@@ -398,7 +405,7 @@ DatagramInterface::send(
 ): Generator
 ```
 
-Send the given data to the IP address and port. Returns a promise that is fulfilled with the amount of data sent once the data has successfully been sent.
+Send the given data to the IP address and port. This coroutine is fulfilled with the amount of data sent once the data has successfully been sent.
 
 Resolution | Type | Description
 :-: | :-- | :--
@@ -436,8 +443,8 @@ Returns the local port.
 ```php
 DatagramFactoryInterface::create(
     string $host,
-    int|null $port,
-    mixed[] $options = null
+    int $port,
+    mixed[] $options = []
 ): DatagramInterface
 ```
 
