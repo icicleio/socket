@@ -5,7 +5,9 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Client\Client;
 use Icicle\Socket\Client\ClientInterface;
+use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
 
@@ -34,7 +36,9 @@ $generator = function (ServerInterface $server) {
     };
     
     while ($server->isOpen()) {
-        $coroutine = new Coroutine($generator(yield $server->accept()));
+        $coroutine = new Coroutine(
+            $generator(yield $server->accept())
+        );
     }
 };
 

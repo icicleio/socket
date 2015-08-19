@@ -1,4 +1,12 @@
 <?php
+
+/*
+ * This file is part of the socket package for Icicle, a library for writing asynchronous code in PHP.
+ *
+ * @copyright 2014-2015 Aaron Piotrowski. All rights reserved.
+ * @license Apache-2.0 See the LICENSE file that was distributed with this source code for more information.
+ */
+
 namespace Icicle\Socket;
 
 use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
@@ -31,12 +39,12 @@ abstract class Socket implements SocketInterface
     }
     
     /**
-     * Calls fclose() if not previously called on socket.
+     * Calls close() on the object if it was not already closed.
      */
     public function __destruct()
     {
-        if (is_resource($this->socket)) {
-            fclose($this->socket);
+        if (null !== $this->socket) {
+            $this->close();
         }
     }
     

@@ -5,7 +5,9 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Client\Client;
 use Icicle\Socket\Client\ClientInterface;
+use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
 
@@ -17,11 +19,11 @@ $coroutine = Coroutine\create(function (ServerInterface $server) {
     $handler = Coroutine\wrap(function (ClientInterface $client) use (&$clients) {
         $clients->attach($client);
         $name = $client->getRemoteAddress() . ':' . $client->getRemotePort();
-        
+
         try {
             foreach ($clients as $stream) {
                 if ($client !== $stream) {
-                    $stream->write("{$name} connected.\n");
+                    yield $stream->write("{$name} connected.\n");
                 }
             }
 
@@ -36,18 +38,18 @@ $coroutine = Coroutine\create(function (ServerInterface $server) {
                     $message = "{$name}: {$data}\n";
                     foreach ($clients as $stream) {
                         if ($client !== $stream) {
-                            $stream->write($message);
+                            yield $stream->write($message);
                         }
                     }
                 }
             }
         } catch (Exception $exception) {
-            $client->close($exception);
-        } finally {
-            $clients->detach($client);
-            foreach ($clients as $stream) {
-                $stream->write("{$name} disconnected.\n");
-            }
+            $client->close();
+        }
+
+        $clients->detach($client);
+        foreach ($clients as $stream) {
+            yield $stream->write("{$name} disconnected.\n");
         }
     });
     
