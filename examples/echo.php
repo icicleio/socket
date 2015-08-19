@@ -5,9 +5,10 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Client\Client;
 use Icicle\Socket\Client\ClientInterface;
-use Icicle\Socket\Server\ServerFactory;
 use Icicle\Socket\Server\Server;
+use Icicle\Socket\Server\ServerFactory;
 
 // Connect using `nc localhost 60000`.
 
@@ -36,7 +37,9 @@ $generator = function (Server $server) {
     echo "Echo server running on {$server->getAddress()}:{$server->getPort()}\n";
     
     while ($server->isOpen()) {
-        $coroutine = new Coroutine($generator(yield $server->accept()));
+        $coroutine = new Coroutine(
+            $generator(yield $server->accept())
+        );
     }
 };
 

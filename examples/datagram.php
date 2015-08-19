@@ -5,6 +5,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Socket\Datagram\Datagram;
 use Icicle\Socket\Datagram\DatagramInterface;
 use Icicle\Socket\Datagram\DatagramFactory;
 
