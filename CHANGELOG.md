@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.2.1
+
+- Changes
+    - `fclose()` is no longer automatically called by `Socket::__destruct()`, `Socket::close()` must be called to invoke `fclose()` on the socket.
+
+---
+
 ### v0.2.0
 
 - Changes
