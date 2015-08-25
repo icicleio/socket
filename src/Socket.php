@@ -38,17 +38,7 @@ abstract class Socket implements SocketInterface
         
         stream_set_blocking($this->socket, 0);
     }
-    
-    /**
-     * Calls close() on the object if it was not already closed.
-     */
-    public function __destruct()
-    {
-        if (null !== $this->socket) {
-            $this->close();
-        }
-    }
-    
+
     /**
      * Determines if the socket is still open.
      *
