@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.3.1
+
+- Bug Fixes
+    - Fixed typo in line that prevents functions from being defined twice.
+
+---
+
 ### v0.3.0
 
 - New Features
