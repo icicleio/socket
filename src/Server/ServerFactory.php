@@ -9,13 +9,11 @@
 
 namespace Icicle\Socket\Server;
 
+use Icicle\Socket;
 use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
-use Icicle\Socket\ParserTrait;
 
 class ServerFactory implements ServerFactoryInterface
 {
-    use ParserTrait;
-
     const DEFAULT_BACKLOG = SOMAXCONN;
 
     // Verify peer should normally be off on the server side.
@@ -45,7 +43,7 @@ class ServerFactory implements ServerFactoryInterface
         $context = [];
         
         $context['socket'] = [];
-        $context['socket']['bindto'] = $this->makeName($host, $port);
+        $context['socket']['bindto'] = Socket\makeName($host, $port);
         $context['socket']['backlog'] = $queue;
         
         if (null !== $pem) {
@@ -74,7 +72,7 @@ class ServerFactory implements ServerFactoryInterface
         
         $context = stream_context_create($context);
         
-        $uri = $this->makeUri($protocol, $host, $port);
+        $uri = Socket\makeUri($protocol, $host, $port);
         // Error reporting suppressed since stream_socket_server() emits an E_WARNING on failure (checked below).
         $socket = @stream_socket_server($uri, $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
         

@@ -80,8 +80,6 @@ trait ReadableStreamTrait
     {
         stream_set_read_buffer($socket, 0);
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
-
-        $this->poll = $this->createPoll($socket);
     }
     
     /**
@@ -91,7 +89,9 @@ trait ReadableStreamTrait
      */
     private function detach(Throwable $exception = null)
     {
-        $this->poll->free();
+        if (null !== $this->poll) {
+            $this->poll->free();
+        }
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -103,7 +103,7 @@ trait ReadableStreamTrait
     /**
      * {@inheritdoc}
      */
-    public function read(int $length = 0, $byte = null, float $timeout = 0): \Generator
+    public function read(int $length = 0, string $byte = null, float $timeout = 0): \Generator
     {
         if (null !== $this->deferred) {
             throw new BusyError('Already waiting on stream.');
@@ -113,13 +113,13 @@ trait ReadableStreamTrait
             throw new UnreadableException('The stream is no longer readable.');
         }
 
-        $this->length = $this->parseLength($length);
-
-        if (0 === $this->length) {
+        $this->length = (int) $length;
+        if (0 >= $this->length) {
             $this->length = SocketInterface::CHUNK_SIZE;
         }
 
-        $this->byte = $this->parseByte($byte);
+        $this->byte = (string) $byte;
+        $this->byte = strlen($this->byte) ? $this->byte[0] : null;
 
         $resource = $this->getResource();
         $data = $this->fetch($resource);
@@ -131,6 +131,10 @@ trait ReadableStreamTrait
         if ($this->eof($resource)) { // Close only if no data was read and at EOF.
             $this->close();
             return $data; // Resolve with empty string on EOF.
+        }
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
         }
 
         $this->poll->listen($timeout);
@@ -179,6 +183,10 @@ trait ReadableStreamTrait
         }
 
         $this->length = 0;
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
+        }
 
         $this->poll->listen($timeout);
 
@@ -242,13 +250,11 @@ trait ReadableStreamTrait
     }
 
     /**
-     * @param resource $socket
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket): SocketEventInterface
+    private function createPoll(): SocketEventInterface
     {
-        return Loop\poll($socket, function ($resource, $expired) {
+        return Loop\poll($this->getResource(), function ($resource, $expired) {
             if ($expired) {
                 $this->deferred->reject(new TimeoutException('The connection timed out.'));
                 return;

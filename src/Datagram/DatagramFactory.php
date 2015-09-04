@@ -9,13 +9,11 @@
 
 namespace Icicle\Socket\Datagram;
 
+use Icicle\Socket;
 use Icicle\Socket\Exception\FailureException;
-use Icicle\Socket\ParserTrait;
 
 class DatagramFactory implements DatagramFactoryInterface
 {
-    use ParserTrait;
-
     /**
      * {@inheritdoc}
      */
@@ -24,11 +22,11 @@ class DatagramFactory implements DatagramFactoryInterface
         $context = [];
         
         $context['socket'] = [];
-        $context['socket']['bindto'] = $this->makeName($host, $port);
+        $context['socket']['bindto'] = Socket\makeName($host, $port);
         
         $context = stream_context_create($context);
         
-        $uri = $this->makeUri('udp', $host, $port);
+        $uri = Socket\makeUri('udp', $host, $port);
         // Error reporting suppressed since stream_socket_server() emits an E_WARNING on failure (checked below).
         $socket = @stream_socket_server($uri, $errno, $errstr, STREAM_SERVER_BIND, $context);
         

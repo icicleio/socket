@@ -50,8 +50,6 @@ class Server extends Socket implements ServerInterface
     {
         parent::__construct($socket);
         
-        $this->poll = $this->createPoll($socket);
-        
         try {
             list($this->address, $this->port) = $this->getName(false);
         } catch (FailureException $exception) {
@@ -74,7 +72,9 @@ class Server extends Socket implements ServerInterface
      */
     protected function free(Throwable $exception = null)
     {
-        $this->poll->free();
+        if (null !== $this->poll) {
+            $this->poll->free();
+        }
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -96,6 +96,10 @@ class Server extends Socket implements ServerInterface
         
         if (!$this->isOpen()) {
             throw new UnavailableException('The server has been closed.');
+        }
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
         }
 
         $this->poll->listen();
@@ -138,13 +142,11 @@ class Server extends Socket implements ServerInterface
     }
 
     /**
-     * @param resource $socket
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket): SocketEventInterface
+    private function createPoll(): SocketEventInterface
     {
-        return Loop\poll($socket, function ($resource) {
+        return Loop\poll($this->getResource(), function ($resource) {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
             $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
 

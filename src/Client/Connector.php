@@ -10,14 +10,12 @@
 namespace Icicle\Socket\Client;
 
 use Icicle\Loop;
+use Icicle\Socket;
 use Icicle\Promise\{Promise, Exception\TimeoutException};
 use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
-use Icicle\Socket\ParserTrait;
 
 class Connector implements ConnectorInterface
 {
-    use ParserTrait;
-
     const DEFAULT_CONNECT_TIMEOUT = 10;
     const DEFAULT_ALLOW_SELF_SIGNED = false;
     const DEFAULT_VERIFY_DEPTH = 10;
@@ -42,7 +40,7 @@ class Connector implements ConnectorInterface
         $context = [];
         
         $context['socket'] = [
-            'connect' => $this->makeName($host, $port),
+            'connect' => Socket\makeName($host, $port),
         ];
 
         $context['ssl'] = [
@@ -69,7 +67,7 @@ class Connector implements ConnectorInterface
 
         $context = stream_context_create($context);
         
-        $uri = $this->makeUri($protocol, $host, $port);
+        $uri = Socket\makeUri($protocol, $host, $port);
         // Error reporting suppressed since stream_socket_client() emits an E_WARNING on failure (checked below).
         $socket = @stream_socket_client(
             $uri,

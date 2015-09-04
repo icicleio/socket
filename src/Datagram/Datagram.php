@@ -13,14 +13,11 @@ use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\{Deferred, Exception\TimeoutException};
 use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
-use Icicle\Socket\Socket;
-use Icicle\Stream\ParserTrait;
+use Icicle\Socket;
 use Throwable;
 
-class Datagram extends Socket implements DatagramInterface
+class Datagram extends Socket\Socket implements DatagramInterface
 {
-    use ParserTrait;
-
     const MAX_PACKET_SIZE = 512;
 
     /**
@@ -96,8 +93,13 @@ class Datagram extends Socket implements DatagramInterface
      */
     protected function free(Throwable $exception = null)
     {
-        $this->poll->free();
-        $this->await->free();
+        if (null !== $this->poll) {
+            $this->poll->free();
+        }
+
+        if (null !== $this->await) {
+            $this->await->free();
+        }
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -145,9 +147,13 @@ class Datagram extends Socket implements DatagramInterface
             throw new UnavailableException('The datagram is no longer readable.');
         }
 
-        $this->length = $this->parseLength($length);
-        if (0 === $this->length) {
+        $this->length = (int) $length;
+        if (0 >= $this->length) {
             $this->length = self::MAX_PACKET_SIZE;
+        }
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
         }
 
         $this->poll->listen($timeout);
@@ -174,7 +180,7 @@ class Datagram extends Socket implements DatagramInterface
         
         $length = strlen($data);
         $written = 0;
-        $peer = $this->makeName($address, $port);
+        $peer = Socket\makeName($address, $port);
         
         if ($this->writeQueue->isEmpty()) {
             if (0 === $length) {
@@ -192,7 +198,11 @@ class Datagram extends Socket implements DatagramInterface
 
         $deferred = new Deferred();
         $this->writeQueue->push([$data, $written, $peer, $deferred]);
-        
+
+        if (null === $this->await) {
+            $this->await = $this->createAwait();
+        }
+
         if (!$this->await->isPending()) {
             $this->await->listen();
         }
@@ -208,13 +218,11 @@ class Datagram extends Socket implements DatagramInterface
     }
 
     /**
-     * @param resource $socket Stream socket resource.
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket): SocketEventInterface
+    private function createPoll(): SocketEventInterface
     {
-        return Loop\poll($socket, function ($resource, $expired) {
+        return Loop\poll($this->getResource(), function ($resource, $expired) {
             try {
                 if ($expired) {
                     throw new TimeoutException('The datagram timed out.');
@@ -231,7 +239,7 @@ class Datagram extends Socket implements DatagramInterface
                     throw new FailureException($message);
                 }
 
-                list($address, $port) = $this->parseName($peer);
+                list($address, $port) = Socket\parseName($peer);
 
                 $result = [$address, $port, $data];
 
@@ -243,13 +251,11 @@ class Datagram extends Socket implements DatagramInterface
     }
     
     /**
-     * @param resource $socket Stream socket resource.
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createAwait($socket): SocketEventInterface
+    private function createAwait(): SocketEventInterface
     {
-        return Loop\await($socket, function ($resource) use (&$onWrite) {
+        return Loop\await($this->getResource(), function ($resource) use (&$onWrite) {
             /** @var \Icicle\Promise\Deferred $deferred */
             list($data, $previous, $peer, $deferred) = $this->writeQueue->shift();
 

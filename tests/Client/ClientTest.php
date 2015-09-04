@@ -185,16 +185,11 @@ class ClientTest extends TestCase
 
         $promise = $this->createClient();
 
-        $promise = $promise
-            ->tap(function () use ($server) {
-                $socket = stream_socket_accept($server);
-                $socket = new Client($socket);
-            })
-            ->then(function (Client $client) {
-                $promise1 = new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
-                $promise2 = new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
-                return Promise\all([$promise1, $promise2]);
-            });
+        $promise = $promise->then(function (Client $client) {
+            $promise1 = new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            $promise2 = new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            return Promise\all([$promise1, $promise2]);
+        });
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
@@ -222,14 +217,9 @@ class ClientTest extends TestCase
 
         $promise = $this->createClient();
 
-        $promise = $promise
-            ->tap(function () use ($server) {
-                $socket = stream_socket_accept($server);
-                $socket = new Client($socket);
-            })
-            ->then(function (Client $client) use ($exception) {
-                return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
-            });
+        $promise = $promise->then(function (Client $client) use ($exception) {
+            return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+        });
 
         Loop\tick(); // Run a few ticks to move into the enable crypto loop.
         Loop\tick();

@@ -64,8 +64,6 @@ trait WritableStreamTrait
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
         
         $this->writeQueue = new \SplQueue();
-        
-        $this->await = $this->createAwait($socket);
     }
 
     /**
@@ -85,7 +83,9 @@ trait WritableStreamTrait
     {
         $this->writable = false;
 
-        $this->await->free();
+        if (null !== $this->await) {
+            $this->await->free();
+        }
 
         while (!$this->writeQueue->isEmpty()) {
             /** @var \Icicle\Promise\Deferred $deferred */
@@ -147,6 +147,10 @@ trait WritableStreamTrait
             $deferred = new Deferred();
             $this->writeQueue->push([$data, $written, $timeout, $deferred]);
 
+            if (null === $this->await) {
+                $this->await = $this->createAwait();
+            }
+
             if (!$this->await->isPending()) {
                 $this->await->listen($timeout);
             }
@@ -193,7 +197,11 @@ trait WritableStreamTrait
         
         $deferred = new Deferred();
         $this->writeQueue->push(['', 0, $timeout, $deferred]);
-        
+
+        if (null === $this->await) {
+            $this->await = $this->createAwait();
+        }
+
         if (!$this->await->isPending()) {
             $this->await->listen($timeout);
         }
@@ -242,13 +250,11 @@ trait WritableStreamTrait
     }
 
     /**
-     * @param resource $socket
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createAwait($socket): SocketEventInterface
+    private function createAwait(): SocketEventInterface
     {
-        return Loop\await($socket, function ($resource, $expired) {
+        return Loop\await($this->getResource(), function ($resource, $expired) {
             if ($expired) {
                 $this->free(new TimeoutException('Writing to the socket timed out.'));
                 return;

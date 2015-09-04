@@ -12,6 +12,10 @@ This library is a component for [Icicle](https://github.com/icicleio/icicle), pr
 
 - PHP 5.5+
 
+##### Suggested
+
+- [openssl extension](http://php.net/manual/en/book.openssl.php): Enables using SSL/TLS on sockets.
+
 ##### Installation
 
 The recommended way to install is with the [Composer](http://getcomposer.org/) package manager. (See the [Composer installation guide](https://getcomposer.org/doc/00-intro.md) for information on installing and using Composer.)
@@ -28,7 +32,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "icicleio/socket": "^0.2"
+        "icicleio/socket": "^0.3"
     }
 }
 ```
