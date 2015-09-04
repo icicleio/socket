@@ -11,7 +11,7 @@ namespace Icicle\Socket;
 
 use Icicle\Socket\Exception\FailureException;
 
-if (!function_exists(__NAMESPACE__ . '/pair')) {
+if (!function_exists(__NAMESPACE__ . '\pair')) {
     /**
      * Returns a pair of connected unix domain stream socket resources.
      *
