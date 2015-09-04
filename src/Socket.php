@@ -10,12 +10,9 @@
 namespace Icicle\Socket;
 
 use Icicle\Socket\Exception\InvalidArgumentError;
-use Icicle\Socket\Exception\FailureException;
 
 abstract class Socket implements SocketInterface
 {
-    use ParserTrait;
-
     /**
      * Stream socket resource.
      *
@@ -83,17 +80,6 @@ abstract class Socket implements SocketInterface
      */
     protected function getName($peer = true)
     {
-        // Error reporting suppressed since stream_socket_get_name() emits an E_WARNING on failure (checked below).
-        $name = @stream_socket_get_name($this->socket, (bool) $peer);
-
-        if (false === $name) {
-            $message = 'Could not get socket name.';
-            if ($error = error_get_last()) {
-                $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
-            }
-            throw new FailureException($message);
-        }
-
-        return $this->parseName($name);
+        return getName($this->socket, $peer);
     }
 }

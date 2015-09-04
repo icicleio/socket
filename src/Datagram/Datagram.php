@@ -13,17 +13,14 @@ use Exception;
 use Icicle\Loop;
 use Icicle\Promise\Deferred;
 use Icicle\Promise\Exception\TimeoutException;
+use Icicle\Socket;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
-use Icicle\Socket\Socket;
-use Icicle\Stream\ParserTrait;
 
-class Datagram extends Socket implements DatagramInterface
+class Datagram extends Socket\Socket implements DatagramInterface
 {
-    use ParserTrait;
-
     const MAX_PACKET_SIZE = 512;
 
     /**
@@ -148,8 +145,8 @@ class Datagram extends Socket implements DatagramInterface
             throw new UnavailableException('The datagram is no longer readable.');
         }
 
-        $this->length = $this->parseLength($length);
-        if (0 === $this->length) {
+        $this->length = (int) $length;
+        if (0 >= $this->length) {
             $this->length = self::MAX_PACKET_SIZE;
         }
 
@@ -178,7 +175,7 @@ class Datagram extends Socket implements DatagramInterface
         $data = (string) $data;
         $length = strlen($data);
         $written = 0;
-        $peer = $this->makeName($address, $port);
+        $peer = Socket\makeName($address, $port);
         
         if ($this->writeQueue->isEmpty()) {
             if (0 === $length) {
@@ -237,7 +234,7 @@ class Datagram extends Socket implements DatagramInterface
                     throw new FailureException($message);
                 }
 
-                list($address, $port) = $this->parseName($peer);
+                list($address, $port) = Socket\parseName($peer);
 
                 $result = [$address, $port, $data];
 
