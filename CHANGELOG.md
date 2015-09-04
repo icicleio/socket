@@ -1,5 +1,16 @@
 # Changelog
 
+### v0.3.0
+
+- New Features
+    - Added some socket utility functions in the `Icicle\Socket` namespace. Notably `Icicle\Socket\pair()` that returns a pair of connected stream sockets.
+    
+- Changes
+    - Objects no longer bind to the event loop until needed. This will allow a server to be created or a client to be accepted, then sent to a thread with a separate event loop.
+    - The byte parameter must be a single-byte string. Use `chr()` to convert an integer to a single ascii character (change made in `icicleio/stream` v0.3.0).
+
+---
+
 ### v0.2.1
 
 - Changes
