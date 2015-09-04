@@ -113,13 +113,12 @@ trait ReadableStreamTrait
             throw new UnreadableException('The stream is no longer readable.');
         }
 
-        $this->length = (int) $length;
+        $this->length = $length;
         if (0 >= $this->length) {
             $this->length = SocketInterface::CHUNK_SIZE;
         }
 
-        $this->byte = (string) $byte;
-        $this->byte = strlen($this->byte) ? $this->byte[0] : null;
+        $this->byte = strlen($byte) ? $byte[0] : null;
 
         $resource = $this->getResource();
         $data = $this->fetch($resource);
