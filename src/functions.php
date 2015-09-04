@@ -19,7 +19,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @throws \Icicle\Socket\Exception\FailureException If creating the sockets fails.
      */
-    function pair()
+    function pair(): array
     {
         if (false === ($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP))) {
             $message = 'Failed to create socket pair.';
@@ -39,7 +39,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @return array [ip-address, port] or [socket-path, 0].
      */
-    function parseName($name)
+    function parseName(string $name): array
     {
         $colon = strrpos($name, ':');
 
@@ -62,7 +62,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @return string
      */
-    function parseAddress($address)
+    function parseAddress(string $address): string
     {
         if (false !== strpos($address, ':')) { // IPv6 address
             return '[' . trim($address, '[]') . ']';
@@ -79,7 +79,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @return string
      */
-    function makeName($address, $port)
+    function makeName(string $address, int $port): string
     {
         if (-1 === $port) { // Unix socket.
             return $address;
@@ -97,7 +97,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @return string
      */
-    function makeUri($protocol, $address, $port)
+    function makeUri(string $protocol, string $address, int $port): string
     {
         if (-1 === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);
@@ -117,7 +117,7 @@ if (!function_exists(__NAMESPACE__ . '\pair')) {
      *
      * @throws \Icicle\Socket\Exception\FailureException If getting the socket name fails.
      */
-    function getName($socket, $peer = true)
+    function getName($socket, bool $peer = true): array
     {
         // Error reporting suppressed since stream_socket_get_name() emits an E_WARNING on failure (checked below).
         $name = @stream_socket_get_name($socket, (bool) $peer);
