@@ -96,8 +96,13 @@ class Datagram extends Socket\Socket implements DatagramInterface
      */
     protected function free(Exception $exception = null)
     {
-        $this->poll->free();
-        $this->await->free();
+        if (null !== $this->poll) {
+            $this->poll->free();
+        }
+
+        if (null !== $this->await) {
+            $this->await->free();
+        }
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -150,6 +155,10 @@ class Datagram extends Socket\Socket implements DatagramInterface
             $this->length = self::MAX_PACKET_SIZE;
         }
 
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
+        }
+
         $this->poll->listen($timeout);
         
         $this->deferred = new Deferred(function () {
@@ -195,7 +204,11 @@ class Datagram extends Socket\Socket implements DatagramInterface
 
         $deferred = new Deferred();
         $this->writeQueue->push([$data, $written, $peer, $deferred]);
-        
+
+        if (null === $this->await) {
+            $this->await = $this->createAwait();
+        }
+
         if (!$this->await->isPending()) {
             $this->await->listen();
         }
@@ -211,13 +224,11 @@ class Datagram extends Socket\Socket implements DatagramInterface
     }
 
     /**
-     * @param resource $socket Stream socket resource.
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket)
+    private function createPoll()
     {
-        return Loop\poll($socket, function ($resource, $expired) {
+        return Loop\poll($this->getResource(), function ($resource, $expired) {
             try {
                 if ($expired) {
                     throw new TimeoutException('The datagram timed out.');
@@ -246,13 +257,11 @@ class Datagram extends Socket\Socket implements DatagramInterface
     }
     
     /**
-     * @param resource $socket Stream socket resource.
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createAwait($socket)
+    private function createAwait()
     {
-        return Loop\await($socket, function ($resource) use (&$onWrite) {
+        return Loop\await($this->getResource(), function ($resource) use (&$onWrite) {
             /** @var \Icicle\Promise\Deferred $deferred */
             list($data, $previous, $peer, $deferred) = $this->writeQueue->shift();
 

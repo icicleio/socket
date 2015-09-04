@@ -83,8 +83,6 @@ trait ReadableStreamTrait
     {
         stream_set_read_buffer($socket, 0);
         stream_set_chunk_size($socket, SocketInterface::CHUNK_SIZE);
-
-        $this->poll = $this->createPoll($socket);
     }
     
     /**
@@ -94,7 +92,9 @@ trait ReadableStreamTrait
      */
     private function detach(Exception $exception = null)
     {
-        $this->poll->free();
+        if (null !== $this->poll) {
+            $this->poll->free();
+        }
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -136,6 +136,10 @@ trait ReadableStreamTrait
             $this->close();
             yield $data; // Resolve with empty string on EOF.
             return;
+        }
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
         }
 
         $this->poll->listen($timeout);
@@ -184,6 +188,10 @@ trait ReadableStreamTrait
         }
 
         $this->length = 0;
+
+        if (null === $this->poll) {
+            $this->poll = $this->createPoll();
+        }
 
         $this->poll->listen($timeout);
 
@@ -247,13 +255,11 @@ trait ReadableStreamTrait
     }
 
     /**
-     * @param resource $socket
-     *
      * @return \Icicle\Loop\Events\SocketEventInterface
      */
-    private function createPoll($socket)
+    private function createPoll()
     {
-        return Loop\poll($socket, function ($resource, $expired) {
+        return Loop\poll($this->getResource(), function ($resource, $expired) {
             if ($expired) {
                 $this->deferred->reject(new TimeoutException('The connection timed out.'));
                 return;
