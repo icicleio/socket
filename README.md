@@ -32,7 +32,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "icicleio/socket": "^0.2"
+        "icicleio/socket": "^0.3"
     }
 }
 ```
