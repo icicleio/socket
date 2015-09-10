@@ -101,6 +101,34 @@ class ServerTest extends TestCase
     /**
      * @depends testAccept
      */
+    public function testAcceptWithPendingConnection()
+    {
+        $this->server = $this->createServer();
+
+        $client = stream_socket_client(
+            'tcp://' . self::HOST_IPv4 . ':' . self::PORT,
+            $errno,
+            $errstr,
+            self::CONNECT_TIMEOUT,
+            STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
+        );
+
+        $promise = new Coroutine($this->server->accept());
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->isInstanceOf(ClientInterface::class));
+
+        $promise->done($callback);
+
+        Loop\run();
+
+        fclose($client);
+    }
+
+    /**
+     * @depends testAccept
+     */
     public function testAcceptAfterClose()
     {
         $this->server = $this->createServer();

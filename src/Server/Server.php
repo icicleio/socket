@@ -100,6 +100,14 @@ class Server extends Socket implements ServerInterface
             throw new UnavailableException('The server has been closed.');
         }
 
+        // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
+        $client = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
+
+        if ($client) {
+            yield $this->createClient($client);
+            return;
+        }
+
         if (null === $this->poll) {
             $this->poll = $this->createPoll();
         }
