@@ -4,7 +4,7 @@
  * This file is part of the socket package for Icicle, a library for writing asynchronous code in PHP.
  *
  * @copyright 2014-2015 Aaron Piotrowski. All rights reserved.
- * @license Apache-2.0 See the LICENSE file that was distributed with this source code for more information.
+ * @license MIT See the LICENSE file that was distributed with this source code for more information.
  */
 
 namespace Icicle\Socket\Server;
@@ -96,6 +96,14 @@ class Server extends Socket implements ServerInterface
         
         if (!$this->isOpen()) {
             throw new UnavailableException('The server has been closed.');
+        }
+
+        // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
+        $client = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
+
+        if ($client) {
+            yield $this->createClient($client);
+            return;
         }
 
         if (null === $this->poll) {

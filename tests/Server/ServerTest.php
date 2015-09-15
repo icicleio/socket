@@ -4,7 +4,7 @@
  * This file is part of the socket package for Icicle, a library for writing asynchronous code in PHP.
  *
  * @copyright 2014-2015 Aaron Piotrowski. All rights reserved.
- * @license Apache-2.0 See the LICENSE file that was distributed with this source code for more information.
+ * @license MIT See the LICENSE file that was distributed with this source code for more information.
  */
 
 namespace Icicle\Tests\Socket\Server;
@@ -93,6 +93,34 @@ class ServerTest extends TestCase
         
         $promise->done($callback);
         
+        Loop\run();
+
+        fclose($client);
+    }
+
+    /**
+     * @depends testAccept
+     */
+    public function testAcceptWithPendingConnection()
+    {
+        $this->server = $this->createServer();
+
+        $client = stream_socket_client(
+            'tcp://' . self::HOST_IPv4 . ':' . self::PORT,
+            $errno,
+            $errstr,
+            self::CONNECT_TIMEOUT,
+            STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
+        );
+
+        $promise = new Coroutine($this->server->accept());
+
+        $callback = $this->createCallback(1);
+        $callback->method('__invoke')
+            ->with($this->isInstanceOf(ClientInterface::class));
+
+        $promise->done($callback);
+
         Loop\run();
 
         fclose($client);
