@@ -102,8 +102,7 @@ class Server extends Socket implements ServerInterface
         $client = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
 
         if ($client) {
-            yield $this->createClient($client);
-            return;
+            return $this->createClient($client);
         }
 
         if (null === $this->poll) {
