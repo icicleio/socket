@@ -5,7 +5,7 @@ This library is a component for [Icicle](https://github.com/icicleio/icicle), pr
 [![Build Status](https://img.shields.io/travis/icicleio/socket/v1.x.svg?style=flat-square)](https://travis-ci.org/icicleio/socket)
 [![Coverage Status](https://img.shields.io/coveralls/icicleio/socket/v1.x.svg?style=flat-square)](https://coveralls.io/r/icicleio/socket)
 [![Semantic Version](https://img.shields.io/github/release/icicleio/socket.svg?style=flat-square)](http://semver.org)
-[![Apache 2 License](https://img.shields.io/packagist/l/icicleio/socket.svg?style=flat-square)](LICENSE)
+[![MIT License](https://img.shields.io/packagist/l/icicleio/socket.svg?style=flat-square)](LICENSE)
 [![@icicleio on Twitter](https://img.shields.io/badge/twitter-%40icicleio-5189c7.svg?style=flat-square)](https://twitter.com/icicleio)
 
 ##### Requirements
