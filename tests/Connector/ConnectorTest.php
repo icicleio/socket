@@ -7,17 +7,17 @@
  * @license MIT See the LICENSE file that was distributed with this source code for more information.
  */
 
-namespace Icicle\Tests\Socket\Client;
+namespace Icicle\Tests\Socket\Connector;
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
 use Icicle\Promise\Exception\TimeoutException;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
-use Icicle\Socket\Client\Connector;
+use Icicle\Socket\Connector\Connector;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\InvalidArgumentError;
+use Icicle\Socket\Socket;
+use Icicle\Socket\SocketInterface;
 use Icicle\Tests\Socket\TestCase;
 
 class ConnectorTest extends TestCase
@@ -29,7 +29,7 @@ class ConnectorTest extends TestCase
     const TIMEOUT = 1;
 
     /**
-     * @var \Icicle\Socket\Client\Connector
+     * @var \Icicle\Socket\Connector\ConnectorInterface
      */
     protected $connector;
     
@@ -172,16 +172,16 @@ class ConnectorTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise->done($callback);
         
-        $promise->done(function (Client $client) {
-            $this->assertTrue($client->isOpen());
-            $this->assertSame($client->getLocalAddress(), self::HOST_IPv4);
-            $this->assertSame($client->getRemoteAddress(), self::HOST_IPv4);
-            $this->assertInternalType('integer', $client->getLocalPort());
-            $this->assertSame($client->getRemotePort(), self::PORT);
+        $promise->done(function (Socket $socket) {
+            $this->assertTrue($socket->isOpen());
+            $this->assertSame($socket->getLocalAddress(), self::HOST_IPv4);
+            $this->assertSame($socket->getRemoteAddress(), self::HOST_IPv4);
+            $this->assertInternalType('integer', $socket->getLocalPort());
+            $this->assertSame($socket->getRemotePort(), self::PORT);
         });
         
         Loop\run();
@@ -200,16 +200,16 @@ class ConnectorTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise->done($callback);
         
-        $promise->done(function (Client $client) {
-            $this->assertTrue($client->isOpen());
-            $this->assertSame($client->getLocalAddress(), self::HOST_IPv6);
-            $this->assertSame($client->getRemoteAddress(), self::HOST_IPv6);
-            $this->assertInternalType('integer', $client->getLocalPort());
-            $this->assertSame($client->getRemotePort(), self::PORT);
+        $promise->done(function (Socket $socket) {
+            $this->assertTrue($socket->isOpen());
+            $this->assertSame($socket->getLocalAddress(), self::HOST_IPv6);
+            $this->assertSame($socket->getRemoteAddress(), self::HOST_IPv6);
+            $this->assertInternalType('integer', $socket->getLocalPort());
+            $this->assertSame($socket->getRemotePort(), self::PORT);
         });
         
         Loop\run();
@@ -228,14 +228,14 @@ class ConnectorTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
-        $promise->done(function (Client $client) {
-            $this->assertTrue($client->isOpen());
-            $this->assertSame(self::HOST_UNIX, $client->getRemoteAddress());
-            $this->assertSame(0, $client->getRemotePort());
+        $promise->done(function (Socket $socket) {
+            $this->assertTrue($socket->isOpen());
+            $this->assertSame(self::HOST_UNIX, $socket->getRemoteAddress());
+            $this->assertSame(0, $socket->getRemotePort());
         });
 
         Loop\run();
@@ -292,7 +292,7 @@ class ConnectorTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
@@ -341,27 +341,27 @@ class ConnectorTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Client($socket);
+                $socket = new Socket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(1));
             })
-            ->then(function (Client $client) {
-                return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            ->then(function (Socket $socket) {
+                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
             })
-            ->tap(function (Client $client) {
-                $this->assertTrue($client->isCryptoEnabled());
+            ->tap(function (Socket $socket) {
+                $this->assertTrue($socket->isCryptoEnabled());
             });
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
@@ -389,22 +389,22 @@ class ConnectorTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Client($socket);
+                $socket = new Socket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(1));
             })
-            ->then(function (Client $client) {
-                return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            ->then(function (Socket $socket) {
+                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
             })
-            ->tap(function (Client $client) {
-                $this->assertTrue($client->isCryptoEnabled());
+            ->tap(function (Socket $socket) {
+                $this->assertTrue($socket->isCryptoEnabled());
             });
 
         $callback = $this->createCallback(1);
@@ -437,22 +437,22 @@ class ConnectorTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Client($socket);
+                $socket = new Socket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
-            ->then(function (Client $client) {
-                return new Coroutine($client->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+            ->then(function (Socket $socket) {
+                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
             })
-            ->tap(function (Client $client) {
-                $this->assertTrue($client->isCryptoEnabled());
+            ->tap(function (Socket $socket) {
+                $this->assertTrue($socket->isCryptoEnabled());
             });
 
         $callback = $this->createCallback(1);

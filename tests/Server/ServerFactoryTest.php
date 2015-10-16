@@ -12,10 +12,10 @@ namespace Icicle\Tests\Socket\Server;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
-use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerFactory;
 use Icicle\Socket\Server\ServerInterface;
+use Icicle\Socket\SocketInterface;
 use Icicle\Tests\Socket\TestCase;
 
 class ServerFactoryTest extends TestCase
@@ -132,7 +132,7 @@ class ServerFactoryTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise->done($callback);
         

@@ -9,9 +9,9 @@
 
 namespace Icicle\Socket\Datagram;
 
-use Icicle\Socket\SocketInterface;
+use Icicle\Stream\StreamResourceInterface;
 
-interface DatagramInterface extends SocketInterface
+interface DatagramInterface extends StreamResourceInterface
 {
     /**
      * @return string
