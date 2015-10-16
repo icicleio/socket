@@ -17,6 +17,7 @@ use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Datagram\Datagram;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
+use Icicle\Socket\Exception\InvalidArgumentError;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Tests\Socket\TestCase;
 
@@ -307,15 +308,9 @@ class DatagramTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->will($this->returnCallback(function ($data) {
-                list($address, $port, $message) = $data;
-                $this->assertSame(self::HOST_IPv4, $address);
-                $this->assertInternalType('integer', $port);
-                $this->assertGreaterThan(0, $port);
-                $this->assertSame(self::WRITE_STRING, $message);
-            }));
+            ->with($this->isInstanceOf(InvalidArgumentError::class));
 
-        $promise->done($callback);
+        $promise->done($this->createCallback(0), $callback);
 
         Loop\run();
     }

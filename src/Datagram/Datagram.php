@@ -13,7 +13,7 @@ use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\{Deferred, Exception\TimeoutException};
 use Icicle\Socket;
-use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
+use Icicle\Socket\Exception\{BusyError, ClosedException, InvalidArgumentError, FailureException, UnavailableException};
 use Icicle\Stream\StreamResource;
 use Throwable;
 
@@ -145,8 +145,10 @@ class Datagram extends StreamResource implements DatagramInterface
             throw new UnavailableException('The datagram is no longer readable.');
         }
 
-        $this->length = (int) $length;
-        if (0 >= $this->length) {
+        $this->length = $length;
+        if (0 > $this->length) {
+            throw new InvalidArgumentError('The length must be a non-negative integer.');
+        } elseif (0 === $this->length) {
             $this->length = self::MAX_PACKET_SIZE;
         }
 
@@ -170,7 +172,7 @@ class Datagram extends StreamResource implements DatagramInterface
     /**
      * {@inheritdoc}
      */
-    public function send($address, int $port, string $data): \Generator
+    public function send(string $address, int $port, string $data): \Generator
     {
         if (!$this->isOpen()) {
             throw new UnavailableException('The datagram is no longer writable.');
@@ -207,7 +209,7 @@ class Datagram extends StreamResource implements DatagramInterface
 
         try {
             return yield $deferred->getPromise();
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             if ($this->isOpen()) {
                 $this->free($exception);
             }
