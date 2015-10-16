@@ -9,27 +9,43 @@
 
 namespace Icicle\Socket;
 
+use Icicle\Socket\Connector\Connector;
+use Icicle\Socket\Connector\ConnectorInterface;
 use Icicle\Socket\Exception\FailureException;
 
-if (!function_exists(__NAMESPACE__ . '\pair')) {
+if (!function_exists(__NAMESPACE__ . '\connect')) {
     /**
-     * Returns a pair of connected unix domain stream socket resources.
+     * @coroutine
      *
-     * @return resource[] Pair of socket resources.
+     * Uses the global connector to connect to the given IP and port.
      *
-     * @throws \Icicle\Socket\Exception\FailureException If creating the sockets fails.
+     * @param string $ip
+     * @param int $port
+     * @param array $options
+     *
+     * @return \Generator
      */
-    function pair()
+    function connect($ip, $port, array $options = [])
     {
-        if (false === ($sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP))) {
-            $message = 'Failed to create socket pair.';
-            if ($error = error_get_last()) {
-                $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
-            }
-            throw new FailureException($message);
+        return connector()->connect($ip, $port, $options);
+    }
+
+    /**
+     * @param \Icicle\Socket\Connector\ConnectorInterface|null $connector
+     *
+     * @return \Icicle\Socket\Connector\ConnectorInterface
+     */
+    function connector(ConnectorInterface $connector = null)
+    {
+        static $instance;
+
+        if (null !== $connector) {
+            $instance = $connector;
+        } elseif (null === $instance) {
+            $instance = new Connector();
         }
 
-        return $sockets;
+        return $instance;
     }
 
     /**
