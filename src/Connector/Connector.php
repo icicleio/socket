@@ -28,7 +28,7 @@ class Connector implements ConnectorInterface
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
-            : (-1 === $port ? 'unix' : 'tcp');
+            : (null === $port ? 'unix' : 'tcp');
         $allowSelfSigned = isset($options['allow_self_signed'])
             ? (bool) $options['allow_self_signed']
             : self::DEFAULT_ALLOW_SELF_SIGNED;

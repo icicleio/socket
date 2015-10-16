@@ -13,7 +13,7 @@ interface DatagramFactoryInterface
 {
     /**
      * @param string $host
-     * @param int $port
+     * @param int|null $port
      * @param mixed[] $options
      *
      * @return \Icicle\Socket\Datagram\Datagram

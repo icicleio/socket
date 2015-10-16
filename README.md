@@ -1,6 +1,6 @@
 # Asynchronous Sockets for Icicle
 
-This library is a component for [Icicle](https://github.com/icicleio/icicle), providing an asynchronous stream socket server, client, connector, and datagram. Like other Icicle components, this library uses [Promises](https://github.com/icicleio/icicle/wiki/Promises) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) for asynchronous operations that may be used to build [Coroutines](https://github.com/icicleio/icicle/wiki/Coroutines) to make writing asynchronous code more like writing synchronous code.
+This library is a component for [Icicle](https://github.com/icicleio/icicle), providing an asynchronous stream socket server, connector, and datagram. Like other Icicle components, this library uses [Promises](https://github.com/icicleio/icicle/wiki/Promises) and [Generators](http://www.php.net/manual/en/language.generators.overview.php) for asynchronous operations that may be used to build [Coroutines](https://github.com/icicleio/icicle/wiki/Coroutines) to make writing asynchronous code more like writing synchronous code.
 
 [![Build Status](https://img.shields.io/travis/icicleio/socket/v1.x.svg?style=flat-square)](https://travis-ci.org/icicleio/socket)
 [![Coverage Status](https://img.shields.io/coveralls/icicleio/socket/v1.x.svg?style=flat-square)](https://coveralls.io/r/icicleio/socket)
@@ -101,11 +101,11 @@ Loop\run();
     - [create()](#create) - Creates a `Server` on a given host and port.
 - [Socket](#socket)
     - [Socket Constructor](#socket-constructor) - Creates a socket object from a stream socket resource.
-    - [enableCrypto()](#enablecrypto) - Enables crypto on the client.
-    - [getLocalAddress()](#getlocaladdress) - Returns the local address of the client.
-    - [getLocalPort()](#getlocalport) - Returns the local port of the client.
-    - [getRemoteAddress()](#getremoteaddress) - Returns the remote address of the client.
-    - [getRemotePort()](#getremoteport) - Returns the remote port of the client.
+    - [enableCrypto()](#enablecrypto) - Enables crypto on the socket.
+    - [getLocalAddress()](#getlocaladdress) - Returns the local address of the socket.
+    - [getLocalPort()](#getlocalport) - Returns the local port of the socket.
+    - [getRemoteAddress()](#getremoteaddress) - Returns the remote address of the socket.
+    - [getRemotePort()](#getremoteport) - Returns the remote port of the socket.
 - [Connector](#connector)
     - [connect()](#connect) - A coroutine resolved with a `Socket` object when a connection is established.
 - [Datagram](#datagram) - UDP socket listener
@@ -116,6 +116,9 @@ Loop\run();
     - [getPort()](#getport1) - Returns the port of the datagram.
 - [DatagramFactory](#datagramfactory)
     - [create()](#create1) - Creates a `Datagram` on a given host and port.
+- [Functions](#functions)
+    - [connect()](#socketconnect) - Uses the global connector to connect to the given IP and port.
+    - [connector()](#socketconnector) - Accesses or sets the global connector instance.
 
 #### Function prototypes
 
@@ -145,11 +148,11 @@ Creates a server from a stream socket server resource generated from `stream_soc
 ServerInterface::accept(): Generator
 ```
 
-A coroutine that is resolved with a `Icicle\Socket\Client\ClientInterface` object when a connection is accepted.
+A coroutine that is resolved with a `Icicle\Socket\SocketInterface` object when a connection is accepted.
 
 Resolution | Type | Description
 :-: | :-- | :--
-Fulfilled | `Icicle\Socket\Client\ClientInterface` | Accepted client connection.
+Fulfilled | `Icicle\Socket\SocketInterface` | Accepted client connection.
 Rejected | `Icicle\Socket\Exception\BusyException` | If the server already had an accept pending.
 Rejected | `Icicle\Socket\Exception\UnavailableException` | If the server was previously closed.
 Rejected | `Icicle\Socket\Exception\ClosedException` | If the server is closed during pending accept.
@@ -176,7 +179,7 @@ Returns the local port.
 
 ## ServerFactory
 
-`Icicle\Socket\Server\ServerFactory` (implements `Icicle\Socket\Server\ServerFactoryInterface`) can be used to create server instances from a hostname or unix socket path, port number (`-1` for unix socket), and list of options.
+`Icicle\Socket\Server\ServerFactory` (implements `Icicle\Socket\Server\ServerFactoryInterface`) can be used to create server instances from a IP or unix socket path, port number (`null` for unix socket), and list of options.
 
 #### create()
 
@@ -188,7 +191,7 @@ ServerFactoryInterface::create(
 ): ServerInterface
 ```
 
-Creates a server bound and listening on the given host and port.
+Creates a server bound and listening on the given ip or unix socket path and port number (`null` for unix socket).
 
 Option | Type | Description
 :-- | :-- | :--
@@ -206,7 +209,7 @@ The class extends `Icicle\Stream\Pipe\DuplexPipe`, so it inherits all the readab
 #### Socket Constructor
 
 ```php
-$client = new Socket(resource $socket)
+$socket = new Socket(resource $socket)
 ```
 
 Creates a socket object from the given stream socket resource.
@@ -219,7 +222,7 @@ Creates a socket object from the given stream socket resource.
 SocketInterface::enableCrypto(int $method, float $timeout = 0): Generator
 ```
 
-Enables encryption on the socket. For Client objects created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\ServerInterface::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Client\ConnectorInterface::connect()`).
+Enables encryption on the socket. For Socket objects created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\ServerInterface::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Connector\ConnectorInterface::connect()`).
 
 ---
 
@@ -263,19 +266,19 @@ Returns the remote port.
 
 ## Connector
 
-The `Icicle\Socket\Client\Connector` class (implements `Icicle\Socket\Client\ConnectorInterface`) asynchronously connects to a remote server, returning a coroutine that is fulfilled with an instance of `Icicle\Socket\Client\Client` when the connection is successfully established. Note that the *host should be given as an IP address*, as DNS lookups performed by PHP are synchronous (blocking). If you wish to use domain names instead of IPs, see `Icicle\Dns\Connector\Connector` in the [DNS component](https://github.com/icicleio/dns).
+The `Icicle\Socket\Connector\Connector` class (implements `Icicle\Socket\Connector\ConnectorInterface`) asynchronously connects to a remote server, returning a coroutine that is fulfilled with an instance of `Icicle\Socket\SocketInterface` when the connection is successfully established. Note that the *host should be given as an IP address*, as DNS lookups performed by PHP are synchronous (blocking). If you wish to use domain names instead of IPs, see `Icicle\Dns\Connector\Connector` in the [DNS component](https://github.com/icicleio/dns).
 
 #### connect()
 
 ```php
 ConnectorInterface::connect(
     string $host,
-    int $port,
+    int|null $port,
     mixed[] $options = []
 ): Generator
 ```
 
-Connects asynchronously to the given host on the given port.
+Connects asynchronously to the given IP or unix socket path on the given port number (`null` for unix socket).
 
 Option | Type | Description
 :-- | :-- | :--
@@ -288,7 +291,7 @@ Option | Type | Description
 
 Resolution | Type | Description
 :-: | :-- | :--
-Fulfilled | `Icicle\Socket\Client\ClientInterface` | Fulfilled once the connection is established.
+Fulfilled | `Icicle\Socket\SocketInterface` | Fulfilled once the connection is established.
 Rejected | `Icicle\Socket\Exception\FailureException` | If the connection attempt fails (such as an invalid host).
 Rejected | `Icicle\Promise\Exception\TimeoutException` | If the connection attempt times out.
 
@@ -364,7 +367,7 @@ Returns the local port.
 
 ## DatagramFactory
 
-`Icicle\Socket\Datagram\DatagramFactory` (implements `Icicle\Socket\Datagram\DatagramFactoryInterface`) can be used to create datagram instances from a hostname or unix socket path, port number (`-1` for unix socket), and list of options.
+`Icicle\Socket\Datagram\DatagramFactory` (implements `Icicle\Socket\Datagram\DatagramFactoryInterface`) can be used to create datagram instances from a hostname or unix socket path, port number (`null` for unix socket), and list of options.
 
 #### create()
 
@@ -376,4 +379,45 @@ DatagramFactoryInterface::create(
 ): DatagramInterface
 ```
 
-Creates a datagram bound and listening on the given host and port. No options are defined in this implementation.
+Creates a datagram bound and listening on the given IP and port number. No options are defined in this implementation.
+
+## Functions
+
+#### Socket\connect()
+
+```php
+Icicle\Socket\connect(
+    string $ip,
+    int|null $port,
+    array $options = []
+): Generator
+```
+
+Connects asynchronously to the given host on the given port. Uses the global connector interface that can be set using `Icicle\Socket\connector()`.
+
+Option | Type | Description
+:-- | :-- | :--
+`protocol` | `string` | The protocol to use, such as tcp, udp, s3, ssh. Defaults to tcp.
+`timeout` | `float` | Number of seconds until connection attempt times out. Defaults to 10 seconds.
+`cn` | `string` | Host name (common name) used to verify certificate. e.g., `*.google.com`
+`allow_self_signed` | `bool` | Set to `true` to allow self-signed certificates. Defaults to `false`.
+`max_depth` | `int` | Max levels of certificate authorities the verifier will transverse. Defaults to 10.
+`cafile` | `string` | Path to bundle of root certificates to verify against.
+
+Resolution | Type | Description
+:-: | :-- | :--
+Fulfilled | `Icicle\Socket\SocketInterface` | Fulfilled once the connection is established.
+Rejected | `Icicle\Socket\Exception\FailureException` | If the connection attempt fails (such as an invalid host).
+Rejected | `Icicle\Promise\Exception\TimeoutException` | If the connection attempt times out.
+
+---
+
+#### Socket\connector()
+
+```php
+Icicle\Socket\connector(
+    ConnectorInterface|null $connector = null
+): ConnectorInterface
+```
+
+Gets the global connector instance. If a connector instance is provided, that instance is set as the global connector instance.
