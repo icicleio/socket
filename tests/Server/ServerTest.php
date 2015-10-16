@@ -13,11 +13,11 @@ use Exception;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
-use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Socket\Server\Server;
+use Icicle\Socket\SocketInterface;
 use Icicle\Tests\Socket\TestCase;
 
 class ServerTest extends TestCase
@@ -89,7 +89,7 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise->done($callback);
         
@@ -117,7 +117,7 @@ class ServerTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClientInterface::class));
+            ->with($this->isInstanceOf(SocketInterface::class));
 
         $promise->done($callback);
 
@@ -209,7 +209,7 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise1->done($callback);
         
@@ -249,7 +249,7 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(ClientInterface::class));
+                 ->with($this->isInstanceOf(SocketInterface::class));
         
         $promise->done($callback);
         

@@ -9,19 +9,60 @@
 
 namespace Icicle\Socket;
 
-interface SocketInterface
+use Icicle\Stream\DuplexStreamInterface;
+use Icicle\Stream\StreamResourceInterface;
+
+interface SocketInterface extends DuplexStreamInterface, StreamResourceInterface
 {
-    const CHUNK_SIZE = 8192; // 8kB
+    /**
+     * @coroutine
+     *
+     * @param int $method One of the server crypto flags, e.g. STREAM_CRYPTO_METHOD_TLS_SERVER for incoming (remote)
+     *     clients, STREAM_CRYPTO_METHOD_TLS_CLIENT for outgoing (local) clients.
+     * @param int|float $timeout Seconds to wait between reads/writes to enable crypto before failing.
+     *
+     * @return \Generator
+     *
+     * @resolve $this
+     *
+     * @reject \Icicle\Socket\Exception\FailureException If enabling crypto fails.
+     * @reject \Icicle\Socket\Exception\ClosedException If the client has been closed.
+     * @reject \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
+     */
+    public function enableCrypto(int $method, float $timeout = 0);
     
     /**
-     * Determines if the socket is still open.
+     * Determines if cyrpto has been enabled.
      *
      * @return bool
      */
-    public function isOpen(): bool;
+    public function isCryptoEnabled(): bool;
     
     /**
-     * Closes the socket, making it unreadable or unwritable.
+     * Returns the remote IP or socket path as a string representation.
+     *
+     * @return string
      */
-    public function close();
+    public function getRemoteAddress(): string;
+    
+    /**
+     * Returns the remote port number (or 0 if unix socket).
+     *
+     * @return int
+     */
+    public function getRemotePort(): int;
+    
+    /**
+     * Returns the local IP or socket path as a string representation.
+     *
+     * @return string
+     */
+    public function getLocalAddress(): string;
+    
+    /**
+     * Returns the local port number (or 0 if unix socket).
+     *
+     * @return int
+     */
+    public function getLocalPort(): int;
 }

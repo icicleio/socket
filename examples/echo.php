@@ -5,32 +5,31 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
 use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerFactory;
+use Icicle\Socket\SocketInterface;
 
 // Connect using `nc localhost 60000`.
 
 $generator = function (Server $server) {
-    $generator = function (ClientInterface $client) {
+    $generator = function (SocketInterface $socket) {
         try {
-            yield $client->write("Want to play shadow? (Type 'exit' to quit)\n");
+            yield $socket->write("Want to play shadow? (Type 'exit' to quit)\n");
 			
-            while ($client->isReadable()) {
-                $data = yield $client->read();
+            while ($socket->isReadable()) {
+                $data = yield $socket->read();
                 
                 $data = trim($data, "\n");
                 
                 if ("exit" === $data) {
-                    yield $client->end("Goodbye!\n");
+                    yield $socket->end("Goodbye!\n");
                 } else {
-                    yield $client->write("Echo: {$data}\n");
+                    yield $socket->write("Echo: {$data}\n");
                 }
             }
         } catch (Exception $e) {
             echo "Client error: {$e->getMessage()}\n";
-            $client->close();
+            $socket->close();
         }
     };
     

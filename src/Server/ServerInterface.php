@@ -9,9 +9,9 @@
 
 namespace Icicle\Socket\Server;
 
-use Icicle\Socket\SocketInterface;
+use Icicle\Stream\StreamResourceInterface;
 
-interface ServerInterface extends SocketInterface
+interface ServerInterface extends StreamResourceInterface
 {
     /**
      * @coroutine

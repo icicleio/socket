@@ -12,12 +12,13 @@ namespace Icicle\Socket\Server;
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\Deferred;
-use Icicle\Socket\Client\{Client, ClientInterface};
+use Icicle\Socket;
 use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
-use Icicle\Socket\Socket;
+use Icicle\Socket\{Socket as ClientSocket, SocketInterface};
+use Icicle\Stream\StreamResource;
 use Throwable;
 
-class Server extends Socket implements ServerInterface
+class Server extends StreamResource implements ServerInterface
 {
     /**
      * Listening hostname or IP address.
@@ -51,9 +52,9 @@ class Server extends Socket implements ServerInterface
         parent::__construct($socket);
         
         try {
-            list($this->address, $this->port) = $this->getName(false);
+            list($this->address, $this->port) = Socket\getName($socket, false);
         } catch (FailureException $exception) {
-            $this->free($exception);
+            $this->close();
         }
     }
     
@@ -99,10 +100,10 @@ class Server extends Socket implements ServerInterface
         }
 
         // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-        $client = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
+        $socket = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
 
-        if ($client) {
-            return $this->createClient($client);
+        if ($socket) {
+            return $this->createSocket($socket);
         }
 
         if (null === $this->poll) {
@@ -141,11 +142,11 @@ class Server extends Socket implements ServerInterface
     /**
      * @param resource $socket Stream socket resource.
      *
-     * @return \Icicle\Socket\Client\ClientInterface
+     * @return \Icicle\Socket\SocketInterface
      */
-    protected function createClient($socket): ClientInterface
+    protected function createSocket($socket): SocketInterface
     {
-        return new Client($socket);
+        return new ClientSocket($socket);
     }
 
     /**
@@ -155,16 +156,16 @@ class Server extends Socket implements ServerInterface
     {
         return Loop\poll($this->getResource(), function ($resource) {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-            $client = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
+            $socket = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
 
             // Having difficulty finding a test to cover this scenario, but it has been seen in production.
-            if (!$client) {
+            if (!$socket) {
                 $this->poll->listen(); // Accept failed, let's go around again.
                 return;
             }
 
             try {
-                $this->deferred->resolve($this->createClient($client));
+                $this->deferred->resolve($this->createSocket($socket));
             } catch (Throwable $exception) {
                 $this->deferred->reject($exception);
             }

@@ -32,7 +32,7 @@ You can also manually edit `composer.json` to add this library as a project requ
 // composer.json
 {
     "require": {
-        "icicleio/socket": "^0.3"
+        "icicleio/socket": "^0.4"
     }
 }
 ```
@@ -44,8 +44,8 @@ The example below implements a simple HTTP server listening on 127.0.0.1:8080 th
 ```php
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
+use Icicle\Socket\Socket;
+use Icicle\Socket\SocketInterface;
 use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
@@ -55,10 +55,10 @@ $server = (new ServerFactory())->create('localhost', 8080);
 $generator = function (ServerInterface $server) {
     printf("Server listening on %s:%d\n", $server->getAddress(), $server->getPort());
 
-    $generator = function (ClientInterface $client) {
+    $generator = function (SocketInterface $socket) {
         $request = '';
         do {
-            $request .= (yield $client->read(0, "\n"));
+            $request .= (yield $socket->read(0, "\n"));
         } while (substr($request, -4) !== "\r\n\r\n");
 
         $message = sprintf("Received the following request:\r\n\r\n%s", $request);
@@ -92,9 +92,6 @@ Loop\run();
 
 ## Documentation
 
-- [SocketInterface](#socketinterface)
-    - [isOpen()](#isopen) - Determines if the socket is open.
-    - [close()](#close) - Closes the socket.
 - [Server](#server)
     - [Server Constructor](#server-constructor) - Creates a server from a stream socket server resource.
     - [accept()](#accept) - A coroutine that is resolved when a client connects.
@@ -102,21 +99,15 @@ Loop\run();
     - [getPort()](#getport) - Returns the port of the server.
 - [ServerFactory](#serverfactory)
     - [create()](#create) - Creates a `Server` on a given host and port.
-- [ReadableStream](#readablestream)
-    - [ReadableStream Constructor](#readablestream-constructor) - Creates a readable stream from a stream socket resource.
-- [WritableStream](#writablestream)
-    - [WritableStream Constructor](#writablestream-constructor) - Creates a writable stream from a stream socket resource.
-- [DuplexStream](#readablestream)
-    - [DuplexStream Constructor](#duplexstream-constructor) - Creates a duplex stream from a stream socket resource.
-- [Client](#client)
-    - [Client Constructor](#client-constructor) - Creates a client from a stream socket resource.
+- [Socket](#socket)
+    - [Socket Constructor](#socket-constructor) - Creates a socket object from a stream socket resource.
     - [enableCrypto()](#enablecrypto) - Enables crypto on the client.
     - [getLocalAddress()](#getlocaladdress) - Returns the local address of the client.
     - [getLocalPort()](#getlocalport) - Returns the local port of the client.
     - [getRemoteAddress()](#getremoteaddress) - Returns the remote address of the client.
     - [getRemotePort()](#getremoteport) - Returns the remote port of the client.
 - [Connector](#connector)
-    - [connect()](#connect) - A coroutine resolved with a `Client` object when a connection is established.
+    - [connect()](#connect) - A coroutine resolved with a `Socket` object when a connection is established.
 - [Datagram](#datagram) - UDP socket listener
     - [Datagram Constructor](#datagram-constructor)
     - [receive()](#receive) - Receives data from the datagram.
@@ -133,28 +124,6 @@ Prototypes for object instance methods are described below using the following s
 ```php
 ClassOrInterfaceName::methodName(ArgumentType $arg): ReturnType
 ```
-
-## SocketInterface
-
-All socket classes in this component implement `Icicle\Socket\SocketInterface`.
-
-#### isOpen()
-
-```php
-SocketInterface::isOpen(): bool
-```
-
-Determines if the socket is still open (connected).
-
----
-
-#### close()
-
-```php
-SocketInterface::close(): void
-```
-
-Closes the socket, making it unreadable or unwritable.
 
 ## Server
 
@@ -228,71 +197,26 @@ Option | Type | Description
 `passphrase` | `string` | PEM passphrase if applicable.
 `name` | `string` | Name to use as SNI identifier. If not set, name will be guessed based on `$host`.
 
-## ReadableStream
+## Socket
 
-`Icicle\Socket\Stream\ReadableStream` implements `Icicle\Stream\ReadableStreamInterface`, so it is interoperable with any other class implementing one of the stream interfaces.
+`Icicle\Socket\Socket` objects implement `Icicle\Socket\SocketInterface` and are used as the fulfillment value of the coroutine returned by `Icicle\Socket\Server\Server::accept()` ([see documentation above](#accept)). (Note that `Icicle\Socket\Server\Server` can be easily extended and modified to fulfill accept requests with different objects implementing `Icicle\Socket\SocketInterface`.)
 
-See the [ReadableStreamInterface API documentation](https://github.com/icicleio/stream#readablestreaminterface) for more information on how readable streams are used.
+The class extends `Icicle\Stream\Pipe\DuplexPipe`, so it inherits all the readable and writable stream methods as well as adding those below.
 
-When the other end of the connection is closed and a read is pending, that read will be fulfilled with an empty string. Subsequent reads will then reject with an instance of `Icicle\Stream\Exception\UnreadableException` and `isReadable()` will return `false`.
-
-#### ReadableStream Constructor
+#### Socket Constructor
 
 ```php
-$stream = new ReadableStream(resource $socket)
+$client = new Socket(resource $socket)
 ```
 
-Creates a readable stream from the given stream socket resource.
-
-## WritableStream
-
-`Icicle\Socket\Stream\WritableStream` implements `Icicle\Stream\WritableStreamInterface`, so it is interoperable with any other class implementing one of the stream interfaces.
-
-See the [WritableStreaminterface API documentation](https://github.com/icicleio/stream#writablestreaminterface) for more information on how writable streams are used.
-
-#### WritableStream Constructor
-
-```php
-$stream = new WritableStream(resource $socket)
-```
-
-Creates a writable stream from the given stream socket resource.
-
-## DuplexStream
-
-`Icicle\Socket\Stream\DuplexStream` implements `Icicle\Stream\DuplexStreamInterface`, making it both a readable stream and a writable stream. It also implements `Icicle\Socket\Stream\DuplexSocketInterface`, adding an optional parameter `float $timeout = 0` to the stream methods as described in the sections above on [ReadableStream](#readablestream) and [WritableStream](#writablestream).
-
-See the [ReadableStreamInterface API documentation](https://github.com/icicleio/stream#readablestreaminterface) and [WritableStreamInterface API documentation](https://github.com/icicleio/stream#writablestreaminterface) for more information on how duplex streams are used.
-
-
-#### DuplexStream Constructor
-
-```php
-$stream = new DuplexStream(resource $socket)
-```
-
-Creates a duplex stream from the given stream socket resource.
-
-## Client
-
-`Icicle\Socket\Client\Client` objects implement `Icicle\Socket\Client\ClientInterface` and are used as the fulfillment value of the coroutine returned by `Icicle\Socket\Server\Server::accept()` ([see documentation above](#accept)). (Note that `Icicle\Socket\Server\Server` can be easily extended and modified to fulfill accept requests with different objects implementing `Icicle\Socket\Client\ClientInterface`.)
-
-The class extends `Icicle\Socket\Stream\DuplexStream`, so it inherits all the readable and writable stream methods as well as adding those below.
-
-#### Client Constructor
-
-```php
-$client = new Client(resource $socket)
-```
+Creates a socket object from the given stream socket resource.
 
 ---
-
-Creates a client object from the given stream socket resource.
 
 #### enableCrypto()
 
 ```php
-ClientInterface::enableCrypto(int $method, float $timeout = 0): Generator
+SocketInterface::enableCrypto(int $method, float $timeout = 0): Generator
 ```
 
 Enables encryption on the socket. For Client objects created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\ServerInterface::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Client\ConnectorInterface::connect()`).
@@ -302,7 +226,7 @@ Enables encryption on the socket. For Client objects created from `Icicle\Socket
 #### getLocalAddress()
 
 ```php
-ClientInterface::getLocalAddress(): string
+SocketInterface::getLocalAddress(): string
 ```
 
 Returns the local IP address as a string.
@@ -312,7 +236,7 @@ Returns the local IP address as a string.
 #### getLocalPort()
 
 ```php
-ClientInterface::getLocalPort(): int
+SocketInterface::getLocalPort(): int
 ```
 
 Returns the local port.
@@ -322,7 +246,7 @@ Returns the local port.
 #### getRemoteAddress()
 
 ```php
-ClientInterface::getRemoteAddress(): string
+SocketInterface::getRemoteAddress(): string
 ```
 
 Returns the remote IP address as a string.
@@ -332,7 +256,7 @@ Returns the remote IP address as a string.
 #### getRemotePort()
 
 ```php
-ClientInterface::getRemotePort(): int
+SocketInterface::getRemotePort(): int
 ```
 
 Returns the remote port.

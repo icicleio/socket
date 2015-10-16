@@ -12,11 +12,12 @@ namespace Icicle\Socket\Datagram;
 use Icicle\Loop;
 use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Promise\{Deferred, Exception\TimeoutException};
-use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
 use Icicle\Socket;
+use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
+use Icicle\Stream\StreamResource;
 use Throwable;
 
-class Datagram extends Socket\Socket implements DatagramInterface
+class Datagram extends StreamResource implements DatagramInterface
 {
     const MAX_PACKET_SIZE = 512;
 
@@ -67,14 +68,11 @@ class Datagram extends Socket\Socket implements DatagramInterface
         stream_set_chunk_size($socket, self::MAX_PACKET_SIZE);
         
         $this->writeQueue = new \SplQueue();
-        
-        $this->poll = $this->createPoll($socket);
-        $this->await = $this->createAwait($socket);
-        
+
         try {
-            list($this->address, $this->port) = $this->getName(false);
+            list($this->address, $this->port) = Socket\getName($socket, false);
         } catch (FailureException $exception) {
-            $this->free($exception);
+            $this->close();
         }
     }
     

@@ -7,14 +7,14 @@
  * @license MIT See the LICENSE file that was distributed with this source code for more information.
  */
 
-namespace Icicle\Socket\Client;
+namespace Icicle\Socket\Connector;
 
 interface ConnectorInterface
 {
     /**
      * @coroutine
      *
-     * @param string $host IP address or unix socket path. (Using a domain name will cause a blocking DNS
+     * @param string $ip IP address or unix socket path. (Using a domain name will cause a blocking DNS
      *     resolution. Use the DNS component to perform non-blocking DNS resolution.)
      * @param int $port Port number or -1 for unix socket.
      * @param mixed[] $options {
@@ -29,7 +29,7 @@ interface ConnectorInterface
      *
      * @return \Generator
      *
-     * @resolve \Icicle\Socket\Client\ClientInterface Fulfilled once the connection is established.
+     * @resolve \Icicle\Socket\SocketInterface Fulfilled once the connection is established.
      *
      * @reject \Icicle\Socket\Exception\FailureException If connecting fails.
      * @reject \Icicle\Socket\Exception\InvalidArgumentError If a CA file does not exist at the path given.
@@ -38,5 +38,5 @@ interface ConnectorInterface
      * @see http://curl.haxx.se/docs/caextract.html Contains links to download bundle of CA Root Certificates that
      *     may be used for the cafile option if needed.
      */
-    public function connect(string $host, int $port, array $options = []): \Generator;
+    public function connect(string $ip, int $port, array $options = []): \Generator;
 }

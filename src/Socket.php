@@ -9,77 +9,116 @@
 
 namespace Icicle\Socket;
 
-use Icicle\Socket\Exception\InvalidArgumentError;
+use Icicle\Socket\Exception\FailureException;
+use Icicle\Stream\Pipe\DuplexPipe;
 
-abstract class Socket implements SocketInterface
+class Socket extends DuplexPipe implements SocketInterface
 {
     /**
-     * Stream socket resource.
-     *
-     * @var resource
+     * @var int
      */
-    private $socket;
+    private $crypto = 0;
     
     /**
-     * @param resource $socket PHP stream socket resource.
-     *
-     * @throws \Icicle\Socket\Exception\InvalidArgumentError If a non-resource is given.
+     * @var string
+     */
+    private $remoteAddress;
+    
+    /**
+     * @var int
+     */
+    private $remotePort;
+    
+    /**
+     * @var string
+     */
+    private $localAddress;
+    
+    /**
+     * @var int
+     */
+    private $localPort;
+    
+    /**
+     * @param resource $socket Stream socket resource.
      */
     public function __construct($socket)
     {
-        if (!is_resource($socket)) {
-            throw new InvalidArgumentError('Non-resource given to constructor!');
+        parent::__construct($socket);
+        
+        try {
+            list($this->remoteAddress, $this->remotePort) = getName($socket, true);
+            list($this->localAddress, $this->localPort) = getName($socket, false);
+        } catch (FailureException $exception) {
+            $this->close();
         }
-        
-        $this->socket = $socket;
-        
-        stream_set_blocking($this->socket, 0);
     }
-
+    
     /**
-     * Determines if the socket is still open.
-     *
+     * {@inheritdoc}
+     */
+    public function enableCrypto(int $method, float $timeout = 0): \Generator
+    {
+        $method = (int) $method;
+
+        yield $this->await($timeout);
+
+        $resource = $this->getResource();
+
+        do {
+            // Error reporting suppressed since stream_socket_enable_crypto() emits E_WARNING on failure.
+            $result = @stream_socket_enable_crypto($resource, (bool) $method, $method);
+        } while (0 === $result && !(yield $this->poll($timeout)));
+
+        if ($result) {
+            $this->crypto = $method;
+            return $this;
+        }
+
+        $message = 'Failed to enable crypto.';
+        if ($error = error_get_last()) {
+            $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
+        }
+        throw new FailureException($message);
+    }
+    
+    /**
      * @return bool
      */
-    public function isOpen(): bool
+    public function isCryptoEnabled(): bool
     {
-        return null !== $this->socket;
+        return 0 !== $this->crypto;
     }
     
     /**
-     * Closes the socket.
+     * {@inheritdoc}
      */
-    public function close()
+    public function getRemoteAddress(): string
     {
-        if (is_resource($this->socket)) {
-            fclose($this->socket);
-        }
-
-        $this->socket = null;
+        return $this->remoteAddress;
     }
     
     /**
-     * Returns the stream socket resource or null if the socket has been closed.
-     *
-     * @return resource|null
+     * {@inheritdoc}
      */
-    public function getResource()
+    public function getRemotePort(): int
     {
-        return $this->socket;
+        return $this->remotePort;
     }
-
+    
     /**
-     * Parses the IP address and port of a network socket. Calls stream_socket_get_name() and then parses the returned
-     * string.
-     *
-     * @param bool $peer True for remote IP and port, false for local IP and port.
-     *
-     * @return array IP address and port pair.
-     *
-     * @throws \Icicle\Socket\Exception\FailureException If getting the socket name fails.
+     * {@inheritdoc}
      */
-    protected function getName(bool $peer = true): array
+    public function getLocalAddress(): string
     {
-        return getName($this->socket, $peer);
+        return $this->localAddress;
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function getLocalPort(): int
+    {
+        return $this->localPort;
     }
 }

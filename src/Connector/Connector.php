@@ -7,11 +7,12 @@
  * @license MIT See the LICENSE file that was distributed with this source code for more information.
  */
 
-namespace Icicle\Socket\Client;
+namespace Icicle\Socket\Connector;
 
 use Icicle\Loop;
-use Icicle\Socket;
 use Icicle\Promise\{Promise, Exception\TimeoutException};
+use Icicle\Socket;
+use Icicle\Socket\Socket as ClientSocket;
 use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
 
 class Connector implements ConnectorInterface
@@ -23,7 +24,7 @@ class Connector implements ConnectorInterface
     /**
      * {@inheritdoc}
      */
-    public function connect(string $host, int $port, array $options = []): \Generator
+    public function connect(string $ip, int $port, array $options = []): \Generator
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
@@ -40,7 +41,7 @@ class Connector implements ConnectorInterface
         $context = [];
         
         $context['socket'] = [
-            'connect' => Socket\makeName($host, $port),
+            'connect' => Socket\makeName($ip, $port),
         ];
 
         $context['ssl'] = [
@@ -67,7 +68,7 @@ class Connector implements ConnectorInterface
 
         $context = stream_context_create($context);
         
-        $uri = Socket\makeUri($protocol, $host, $port);
+        $uri = Socket\makeUri($protocol, $ip, $port);
         // Error reporting suppressed since stream_socket_client() emits an E_WARNING on failure (checked below).
         $socket = @stream_socket_client(
             $uri,
@@ -94,7 +95,7 @@ class Connector implements ConnectorInterface
                     return;
                 }
 
-                $resolve(new Client($resource));
+                $resolve(new ClientSocket($resource));
             });
             
             $await->listen($timeout);
