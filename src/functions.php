@@ -17,15 +17,15 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
     /**
      * @coroutine
      *
-     * Uses the global connector to connect to the given IP and port.
+     * Uses the global connector to connect to the given IP or unix socket path and port (null for unix socket).
      *
      * @param string $ip
-     * @param int $port
+     * @param int|null $port
      * @param array $options
      *
      * @return \Generator
      */
-    function connect($ip, $port, array $options = [])
+    function connect($ip, $port = null, array $options = [])
     {
         return connector()->connect($ip, $port, $options);
     }
@@ -91,11 +91,11 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      * Creates string of format $address[:$port].
      *
      * @param string $address Address or path.
-     * @param int $port Port number or null for unix socket.
+     * @param int|null $port Port number or null for unix socket.
      *
      * @return string
      */
-    function makeName($address, $port)
+    function makeName($address, $port = null)
     {
         if (null === $port) { // Unix socket.
             return (string) $address;
@@ -109,11 +109,11 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      *
      * @param string $protocol Protocol.
      * @param string $address Address or path.
-     * @param int $port Port number or null for unix socket.
+     * @param int|null $port Port number or null for unix socket.
      *
      * @return string
      */
-    function makeUri($protocol, $address, $port)
+    function makeUri($protocol, $address, $port = null)
     {
         if (null === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);

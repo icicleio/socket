@@ -26,7 +26,7 @@ class Connector implements ConnectorInterface
     /**
      * {@inheritdoc}
      */
-    public function connect($ip, $port, array $options = [])
+    public function connect($ip, $port = null, array $options = [])
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']

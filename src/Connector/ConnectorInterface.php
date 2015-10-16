@@ -38,5 +38,5 @@ interface ConnectorInterface
      * @see http://curl.haxx.se/docs/caextract.html Contains links to download bundle of CA Root Certificates that
      *     may be used for the cafile option if needed.
      */
-    public function connect($ip, $port, array $options = []);
+    public function connect($ip, $port = null, array $options = []);
 }
