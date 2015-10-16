@@ -16,6 +16,7 @@ use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
+use Icicle\Socket\Exception\InvalidArgumentError;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Stream\StreamResource;
@@ -149,7 +150,9 @@ class Datagram extends StreamResource implements DatagramInterface
         }
 
         $this->length = (int) $length;
-        if (0 >= $this->length) {
+        if (0 > $this->length) {
+            throw new InvalidArgumentError('The length must be a non-negative integer.');
+        } elseif (0 === $this->length) {
             $this->length = self::MAX_PACKET_SIZE;
         }
 
