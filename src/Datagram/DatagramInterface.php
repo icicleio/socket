@@ -44,7 +44,7 @@ interface DatagramInterface extends StreamResourceInterface
     /**
      * @coroutine
      *
-     * @param int|string $address IP address of receiver.
+     * @param string $address IP address of receiver.
      * @param int $port Port of receiver.
      * @param string $data Data to send.
      *
