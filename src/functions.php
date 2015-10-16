@@ -24,7 +24,7 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      *
      * @return \Generator
      */
-    function connect(string $ip, int $port = null, array $options = [])
+    function connect(string $ip, int $port = null, array $options = []): \Generator
     {
         return connector()->connect($ip, $port, $options);
     }
@@ -34,7 +34,7 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      *
      * @return \Icicle\Socket\Connector\ConnectorInterface
      */
-    function connector(ConnectorInterface $connector = null)
+    function connector(ConnectorInterface $connector = null): ConnectorInterface
     {
         static $instance;
 
@@ -97,7 +97,7 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
     function makeName(string $address, int $port = null): string
     {
         if (null === $port) { // Unix socket.
-            return (string) $address;
+            return $address;
         }
 
         return sprintf('%s:%d', parseAddress($address), $port);
@@ -135,7 +135,7 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
     function getName($socket, bool $peer = true): array
     {
         // Error reporting suppressed since stream_socket_get_name() emits an E_WARNING on failure (checked below).
-        $name = @stream_socket_get_name($socket, (bool) $peer);
+        $name = @stream_socket_get_name($socket, $peer);
 
         if (false === $name) {
             $message = 'Could not get socket name.';
