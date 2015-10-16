@@ -20,5 +20,5 @@ interface DatagramFactoryInterface
      *
      * @throws \Icicle\Socket\Exception\FailureException If creating the datagram fails.
      */
-    public function create(string $host, int $port, array $options = []): DatagramInterface;
+    public function create(string $host, int $port = null, array $options = []): DatagramInterface;
 }

@@ -24,7 +24,7 @@ class Connector implements ConnectorInterface
     /**
      * {@inheritdoc}
      */
-    public function connect(string $ip, int $port, array $options = []): \Generator
+    public function connect(string $ip, int $port = null, array $options = []): \Generator
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
