@@ -97,8 +97,8 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      */
     function makeName($address, $port)
     {
-        if (-1 === $port) { // Unix socket.
-            return $address;
+        if (null === $port) { // Unix socket.
+            return (string) $address;
         }
 
         return sprintf('%s:%d', parseAddress($address), $port);
@@ -115,7 +115,7 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
      */
     function makeUri($protocol, $address, $port)
     {
-        if (-1 === $port) { // Unix socket.
+        if (null === $port) { // Unix socket.
             return sprintf('%s://%s', $protocol, $address);
         }
 

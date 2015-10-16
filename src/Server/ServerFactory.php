@@ -29,7 +29,7 @@ class ServerFactory implements ServerFactoryInterface
     {
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
-            : (-1 === $port ? 'unix' : 'tcp');
+            : (null === $port ? 'unix' : 'tcp');
         $queue = isset($options['backlog']) ? (int) $options['backlog'] : self::DEFAULT_BACKLOG;
         $pem = isset($options['pem']) ? (string) $options['pem'] : null;
         $passphrase = isset($options['passphrase']) ? (string) $options['passphrase'] : null;
