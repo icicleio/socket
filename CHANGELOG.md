@@ -1,5 +1,17 @@
 # Changelog
 
+### v0.4.0
+
+- New Features
+    - Added functions `Icicle\Socket\connector()` and `Icicle\Socket\connect()`. These functions are used to access and set a global connector object and use that object to connect to remote servers.
+
+- Changes
+    - Moved stream socket classes to the `icicleio/stream` package.
+    - Renamed `Icicle\Socket\Client\Client` and `Icicle\Socket\Client\ClientInterface` to `Icicle\Socket\Socket` and `Icicle\Socket\SocketInterface`. These names better represent the purpose of the class and interface (as they are not strictly for client connections, but remote sockets in general).
+    - `Icicle\Socket\Server\ServerInterface::accept()` now resolves to an instance of `Icicle\Socket\SocketInterface`.
+    
+---
+
 ### v0.3.1
 
 - Bug Fixes
