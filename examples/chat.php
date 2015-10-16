@@ -5,50 +5,48 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
-use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
+use Icicle\Socket\SocketInterface;
 
 // Connect using `nc localhost 60000`.
 
 $coroutine = Coroutine\create(function (ServerInterface $server) {
-    $clients = new SplObjectStorage();
+    $sockets = new SplObjectStorage();
     
-    $handler = Coroutine\wrap(function (ClientInterface $client) use (&$clients) {
-        $clients->attach($client);
-        $name = $client->getRemoteAddress() . ':' . $client->getRemotePort();
+    $handler = Coroutine\wrap(function (SocketInterface $socket) use (&$sockets) {
+        $sockets->attach($socket);
+        $name = $socket->getRemoteAddress() . ':' . $socket->getRemotePort();
 
         try {
-            foreach ($clients as $stream) {
-                if ($client !== $stream) {
+            foreach ($sockets as $stream) {
+                if ($socket !== $stream) {
                     yield $stream->write("{$name} connected.\n");
                 }
             }
 
-            yield $client->write("Welcome {$name}!\n");
+            yield $socket->write("Welcome {$name}!\n");
             
-            while ($client->isReadable()) {
-                $data = trim(yield $client->read());
+            while ($socket->isReadable()) {
+                $data = trim(yield $socket->read());
                 
                 if ("/exit" === $data) {
-                    yield $client->end("Goodbye!\n");
+                    yield $socket->end("Goodbye!\n");
                 } elseif ('' !== $data) {
                     $message = "{$name}: {$data}\n";
-                    foreach ($clients as $stream) {
-                        if ($client !== $stream) {
+                    foreach ($sockets as $stream) {
+                        if ($socket !== $stream) {
                             yield $stream->write($message);
                         }
                     }
                 }
             }
         } catch (Exception $exception) {
-            $client->close();
+            $socket->close();
         }
 
-        $clients->detach($client);
-        foreach ($clients as $stream) {
+        $sockets->detach($socket);
+        foreach ($sockets as $stream) {
             yield $stream->write("{$name} disconnected.\n");
         }
     });

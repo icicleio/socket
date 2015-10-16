@@ -5,18 +5,16 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Client\Client;
-use Icicle\Socket\Client\ClientInterface;
-use Icicle\Socket\Server\Server;
 use Icicle\Socket\Server\ServerInterface;
 use Icicle\Socket\Server\ServerFactory;
+use Icicle\Socket\SocketInterface;
 
 $server = (new ServerFactory())->create('127.0.0.1', 8080, ['backlog' => 1024]);
 
 $generator = function (ServerInterface $server) {
-    $generator = function (ClientInterface $client) {
+    $generator = function (SocketInterface $socket) {
         try {
-            $data = (yield $client->read());
+            $data = (yield $socket->read());
             
             $microtime = sprintf("%0.4f", microtime(true));
             $message = "Received the following request ({$microtime}):\r\n\r\n{$data}";
@@ -29,9 +27,9 @@ $generator = function (ServerInterface $server) {
             $data .= "\r\n";
             $data .= $message;
             
-            yield $client->write($data);
+            yield $socket->write($data);
         } finally {
-            $client->close();
+            $socket->close();
         }
     };
     
