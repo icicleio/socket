@@ -44,7 +44,7 @@ interface DatagramInterface extends StreamResourceInterface
     /**
      * @coroutine
      *
-     * @param int|string $address IP address of receiver.
+     * @param string $address IP address of receiver.
      * @param int $port Port of receiver.
      * @param string $data Data to send.
      *
@@ -57,5 +57,5 @@ interface DatagramInterface extends StreamResourceInterface
      * @throws \Icicle\Promise\Exception\TimeoutException If sending the data times out.
      * @throws \Icicle\Socket\Exception\FailureException If sending data fails.
      */
-    public function send($address, int $port, string $data): \Generator;
+    public function send(string $address, int $port, string $data): \Generator;
 }
