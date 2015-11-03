@@ -52,7 +52,9 @@ class Server extends StreamResource implements ServerInterface
     public function __construct($socket)
     {
         parent::__construct($socket);
-        
+
+        $this->poll = $this->createPoll();
+
         try {
             list($this->address, $this->port) = Socket\getName($socket, false);
         } catch (FailureException $exception) {
@@ -75,9 +77,7 @@ class Server extends StreamResource implements ServerInterface
      */
     protected function free(Exception $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-        }
+        $this->poll->free();
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -109,10 +109,6 @@ class Server extends StreamResource implements ServerInterface
             return;
         }
 
-        if (null === $this->poll) {
-            $this->poll = $this->createPoll();
-        }
-
         $this->poll->listen();
         
         $this->deferred = new Deferred(function () {
@@ -140,6 +136,20 @@ class Server extends StreamResource implements ServerInterface
     public function getPort()
     {
         return $this->port;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rebind()
+    {
+        if ($this->poll->isPending()) {
+            throw new BusyError('Cannot rebind while server is busy.');
+        }
+
+        $this->poll->free();
+
+        $this->poll = $this->createPoll();
     }
 
     /**

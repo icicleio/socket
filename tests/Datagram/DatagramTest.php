@@ -12,6 +12,7 @@ namespace Icicle\Tests\Socket\Datagram;
 use Exception;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\LoopInterface;
 use Icicle\Loop\SelectLoop;
 use Icicle\Promise\Exception\TimeoutException;
 use Icicle\Socket\Datagram\Datagram;
@@ -695,5 +696,37 @@ class DatagramTest extends TestCase
         $promise->done($this->createCallback(0), $callback);
 
         Loop\run();
+    }
+
+    public function testRebind()
+    {
+        $this->datagram = $this->createDatagram();
+
+        $loop = $this->getMock(LoopInterface::class);
+
+        $loop->expects($this->once())
+            ->method('poll')
+            ->will($this->returnValue($this->getMock(Loop\Events\SocketEventInterface::class)));
+
+        $loop->expects($this->once())
+            ->method('await')
+            ->will($this->returnValue($this->getMock(Loop\Events\SocketEventInterface::class)));
+
+        Loop\loop($loop);
+
+        $this->datagram->rebind();
+    }
+
+    /**
+     * @depends testRebind
+     * @expectedException \Icicle\Socket\Exception\BusyError
+     */
+    public function testRebindWhileBusy()
+    {
+        $this->datagram = $this->createDatagram();
+
+        $promise = new Coroutine($this->datagram->receive());
+
+        $this->datagram->rebind();
     }
 }

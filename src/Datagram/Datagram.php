@@ -73,6 +73,9 @@ class Datagram extends StreamResource implements DatagramInterface
         
         $this->writeQueue = new \SplQueue();
 
+        $this->poll = $this->createPoll();
+        $this->await = $this->createAwait();
+
         try {
             list($this->address, $this->port) = Socket\getName($socket, false);
         } catch (FailureException $exception) {
@@ -95,13 +98,8 @@ class Datagram extends StreamResource implements DatagramInterface
      */
     protected function free(Exception $exception = null)
     {
-        if (null !== $this->poll) {
-            $this->poll->free();
-        }
-
-        if (null !== $this->await) {
-            $this->await->free();
-        }
+        $this->poll->free();
+        $this->await->free();
 
         if (null !== $this->deferred) {
             $this->deferred->getPromise()->cancel(
@@ -156,10 +154,6 @@ class Datagram extends StreamResource implements DatagramInterface
             $this->length = self::MAX_PACKET_SIZE;
         }
 
-        if (null === $this->poll) {
-            $this->poll = $this->createPoll();
-        }
-
         $this->poll->listen($timeout);
         
         $this->deferred = new Deferred(function () {
@@ -206,10 +200,6 @@ class Datagram extends StreamResource implements DatagramInterface
         $deferred = new Deferred();
         $this->writeQueue->push([$data, $written, $peer, $deferred]);
 
-        if (null === $this->await) {
-            $this->await = $this->createAwait();
-        }
-
         if (!$this->await->isPending()) {
             $this->await->listen();
         }
@@ -222,6 +212,22 @@ class Datagram extends StreamResource implements DatagramInterface
             }
             throw $exception;
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rebind()
+    {
+        if ($this->poll->isPending() || $this->await->isPending()) {
+            throw new BusyError('Cannot rebind while the datagram is busy.');
+        }
+
+        $this->poll->free();
+        $this->await->free();
+
+        $this->poll = $this->createPoll();
+        $this->await = $this->createAwait();
     }
 
     /**
