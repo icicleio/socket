@@ -12,6 +12,7 @@ namespace Icicle\Tests\Socket\Server;
 use Exception;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\Events\SocketEventInterface;
 use Icicle\Loop\LoopInterface;
 use Icicle\Loop\SelectLoop;
 use Icicle\Socket\Exception\BusyError;
@@ -262,10 +263,9 @@ class ServerTest extends TestCase
         $this->server = $this->createServer();
 
         $loop = $this->getMock(LoopInterface::class);
-
         $loop->expects($this->once())
             ->method('poll')
-            ->will($this->returnValue($this->getMock(Loop\Events\SocketEventInterface::class)));
+            ->will($this->returnValue($this->getMock(SocketEventInterface::class)));
 
         Loop\loop($loop);
 
@@ -274,13 +274,23 @@ class ServerTest extends TestCase
 
     /**
      * @depends testRebind
-     * @expectedException \Icicle\Socket\Exception\BusyError
      */
-    public function testRebindWhileBusy()
+    public function testRebindDuringAccept()
     {
         $this->server = $this->createServer();
 
         $promise = new Coroutine($this->server->accept());
+
+        $poll = $this->getMock(SocketEventInterface::class);
+        $poll->expects($this->once())
+            ->method('listen');
+
+        $loop = $this->getMock(LoopInterface::class);
+        $loop->expects($this->once())
+            ->method('poll')
+            ->will($this->returnValue($poll));
+
+        Loop\loop($loop);
 
         $this->server->rebind();
     }

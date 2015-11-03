@@ -143,13 +143,14 @@ class Server extends StreamResource implements ServerInterface
      */
     public function rebind()
     {
-        if ($this->poll->isPending()) {
-            throw new BusyError('Cannot rebind while server is busy.');
-        }
-
+        $pending = $this->poll->isPending();
         $this->poll->free();
 
         $this->poll = $this->createPoll();
+
+        if ($pending) {
+            $this->poll->listen();
+        }
     }
 
     /**

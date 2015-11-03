@@ -11,6 +11,7 @@ namespace Icicle\Tests\Socket;
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Socket;
 use Icicle\Socket\Connector\ConnectorInterface;
 use Icicle\Socket\Socket as ClientSocket;
@@ -19,6 +20,11 @@ use Icicle\Tests\Socket\Connector\ConnectorTest;
 
 class FunctionsTest extends TestCase
 {
+    public function setUp()
+    {
+        Loop\loop(new SelectLoop());
+    }
+
     public function testConnector()
     {
         $connector = Socket\connector();

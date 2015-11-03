@@ -59,6 +59,11 @@ class Datagram extends StreamResource implements DatagramInterface
      * @var int
      */
     private $length = 0;
+
+    /**
+     * @var float|int
+     */
+    private $timeout = 0;
     
     /**
      * @param resource $socket
@@ -154,7 +159,7 @@ class Datagram extends StreamResource implements DatagramInterface
             $this->length = self::MAX_PACKET_SIZE;
         }
 
-        $this->poll->listen($timeout);
+        $this->poll->listen($this->timeout = $timeout);
         
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
@@ -219,15 +224,23 @@ class Datagram extends StreamResource implements DatagramInterface
      */
     public function rebind()
     {
-        if ($this->poll->isPending() || $this->await->isPending()) {
-            throw new BusyError('Cannot rebind while the datagram is busy.');
-        }
-
+        $pending = $this->poll->isPending();
         $this->poll->free();
-        $this->await->free();
 
         $this->poll = $this->createPoll();
+
+        if ($pending) {
+            $this->poll->listen($this->timeout);
+        }
+
+        $pending = $this->await->isPending();
+        $this->await->free();
+
         $this->await = $this->createAwait();
+
+        if ($pending) {
+            $this->await->listen();
+        }
     }
 
     /**
