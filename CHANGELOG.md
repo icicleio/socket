@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.4.1
+
+- New Features
+    - Added a `rebind()` method to `Icicle\Socket\Server\Server` and `Icicle\Socket\Datagram\Datagram` that rebinds the object to the current event loop instance. This method should be used if the event loop is switched out during runtime (for example, when forking using the concurrent package).
+
+---
+
 ### v0.4.0
 
 - New Features
