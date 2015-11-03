@@ -61,11 +61,6 @@ class Datagram extends StreamResource implements DatagramInterface
     private $length = 0;
 
     /**
-     * @var float|int
-     */
-    private $timeout = 0;
-    
-    /**
      * @param resource $socket
      */
     public function __construct($socket)
@@ -159,7 +154,7 @@ class Datagram extends StreamResource implements DatagramInterface
             $this->length = self::MAX_PACKET_SIZE;
         }
 
-        $this->poll->listen($this->timeout = $timeout);
+        $this->poll->listen($timeout);
         
         $this->deferred = new Deferred(function () {
             $this->poll->cancel();
@@ -221,8 +216,10 @@ class Datagram extends StreamResource implements DatagramInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param float|int $timeout
      */
-    public function rebind()
+    public function rebind($timeout = 0)
     {
         $pending = $this->poll->isPending();
         $this->poll->free();
@@ -230,7 +227,7 @@ class Datagram extends StreamResource implements DatagramInterface
         $this->poll = $this->createPoll();
 
         if ($pending) {
-            $this->poll->listen($this->timeout);
+            $this->poll->listen($timeout);
         }
 
         $pending = $this->await->isPending();
