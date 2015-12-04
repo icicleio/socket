@@ -9,100 +9,34 @@
 
 namespace Icicle\Socket\Connector;
 
-use Icicle\Loop;
-use Icicle\Promise\{Promise, Exception\TimeoutException};
-use Icicle\Socket;
-use Icicle\Socket\Socket as ClientSocket;
-use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
-
-class Connector implements ConnectorInterface
+interface Connector
 {
-    const DEFAULT_CONNECT_TIMEOUT = 10;
-    const DEFAULT_ALLOW_SELF_SIGNED = false;
-    const DEFAULT_VERIFY_DEPTH = 10;
-
     /**
-     * {@inheritdoc}
+     * @coroutine
+     *
+     * @param string $ip IP address or unix socket path. (Using a domain name will cause a blocking DNS
+     *     resolution. Use the DNS component to perform non-blocking DNS resolution.)
+     * @param int|null $port Port number or null for unix socket.
+     * @param mixed[] $options {
+     *     @var string $protocol The protocol to use, such as tcp, udp, s3, ssh. Defaults to tcp.
+     *     @var int|float $timeout Number of seconds until connection attempt times out. Defaults to 10 seconds.
+     *     @var string $name Name to verify certificate. May match CN or SAN names on certificate. (PHP 5.6+)
+     *     @var string $cn Name to verify certificate. Must match CN exactly. (PHP 5.5) (e.g., '*.google.com').
+     *     @var bool $allow_self_signed Set to true to allow self-signed certificates. Defaults to false.
+     *     @var int $verify_depth Max levels of certificate authorities the verifier will transverse. Defaults to 10.
+     *     @var string cafile Path to bundle of root certificates to verify against.
+     * }
+     *
+     * @return \Generator
+     *
+     * @resolve \Icicle\Socket\Socket Fulfilled once the connection is established.
+     *
+     * @throws \Icicle\Awaitable\Exception\TimeoutException If the connection attempt times out.
+     * @throws \Icicle\Exception\InvalidArgumentError If a CA file does not exist at the path given.
+     * @throws \Icicle\Socket\Exception\FailureException If connecting fails.
+     *
+     * @see http://curl.haxx.se/docs/caextract.html Contains links to download bundle of CA Root Certificates that
+     *     may be used for the cafile option if needed.
      */
-    public function connect(string $ip, int $port = null, array $options = []): \Generator
-    {
-        $protocol = isset($options['protocol'])
-            ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
-        $allowSelfSigned = isset($options['allow_self_signed'])
-            ? (bool) $options['allow_self_signed']
-            : self::DEFAULT_ALLOW_SELF_SIGNED;
-        $timeout = isset($options['timeout']) ? (float) $options['timeout'] : self::DEFAULT_CONNECT_TIMEOUT;
-        $verifyDepth = isset($options['verify_depth']) ? (int) $options['verify_depth'] : self::DEFAULT_VERIFY_DEPTH;
-        $cafile = isset($options['cafile']) ? (string) $options['cafile'] : null;
-        $name = isset($options['name']) ? (string) $options['name'] : null;
-        $cn = isset($options['cn']) ? (string) $options['cn'] : $name;
-        
-        $context = [];
-        
-        $context['socket'] = [
-            'connect' => Socket\makeName($ip, $port),
-        ];
-
-        $context['ssl'] = [
-            'capture_peer_cert' => true,
-            'capture_peer_chain' => true,
-            'capture_peer_cert_chain' => true,
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'allow_self_signed' => $allowSelfSigned,
-            'verify_depth' => $verifyDepth,
-            'CN_match' => $cn,
-            'SNI_enabled' => true,
-            'SNI_server_name' => $name,
-            'peer_name' => $name,
-            'disable_compression' => true,
-        ];
-        
-        if (null !== $cafile) {
-            if (!file_exists($cafile)) {
-                throw new InvalidArgumentError('No file exists at path given for cafile.');
-            }
-            $context['ssl']['cafile'] = $cafile;
-        }
-
-        $context = stream_context_create($context);
-        
-        $uri = Socket\makeUri($protocol, $ip, $port);
-        // Error reporting suppressed since stream_socket_client() emits an E_WARNING on failure (checked below).
-        $socket = @stream_socket_client(
-            $uri,
-            $errno,
-            $errstr,
-            null, // Timeout does not apply for async connect. Timeout enforced by await below.
-            STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT,
-            $context
-        );
-        
-        if (!$socket || $errno) {
-            throw new FailureException(
-                sprintf('Could not connect to %s; Errno: %d; %s', $uri, $errno, $errstr)
-            );
-        }
-        
-        return yield new Promise(function (callable $resolve, callable $reject) use ($socket, $timeout) {
-            $await = Loop\await($socket, function ($resource, $expired) use (&$await, $resolve, $reject) {
-                /** @var \Icicle\Loop\Events\SocketEventInterface $await */
-                $await->free();
-                
-                if ($expired) {
-                    $reject(new TimeoutException('Connection attempt timed out.'));
-                    return;
-                }
-
-                $resolve(new ClientSocket($resource));
-            });
-            
-            $await->listen($timeout);
-
-            return function () use ($await) {
-                $await->free();
-            };
-        });
-    }
+    public function connect(string $ip, int $port = null, array $options = []): \Generator;
 }

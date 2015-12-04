@@ -5,14 +5,14 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Server\ServerInterface;
-use Icicle\Socket\Server\ServerFactory;
-use Icicle\Socket\SocketInterface;
+use Icicle\Socket\Server\Server;
+use Icicle\Socket\Server\DefaultServerFactory;
+use Icicle\Socket\Socket;
 
-$server = (new ServerFactory())->create('127.0.0.1', 8080, ['backlog' => 1024]);
+$server = (new DefaultServerFactory())->create('127.0.0.1', 8080, ['backlog' => 1024]);
 
-$generator = function (ServerInterface $server) {
-    $generator = function (SocketInterface $socket) {
+$generator = function (Server $server) {
+    $generator = function (Socket $socket) {
         try {
             $data = yield $socket->read();
             

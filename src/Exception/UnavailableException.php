@@ -9,4 +9,4 @@
 
 namespace Icicle\Socket\Exception;
 
-class UnavailableException extends Exception {}
+class UnavailableException extends \Exception implements Exception {}

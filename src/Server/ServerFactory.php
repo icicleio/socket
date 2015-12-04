@@ -9,77 +9,30 @@
 
 namespace Icicle\Socket\Server;
 
-use Icicle\Socket;
-use Icicle\Socket\Exception\{InvalidArgumentError, FailureException};
-
-class ServerFactory implements ServerFactoryInterface
+interface ServerFactory
 {
-    const DEFAULT_BACKLOG = SOMAXCONN;
-
-    // Verify peer should normally be off on the server side.
-    const DEFAULT_VERIFY_PEER = false;
-    const DEFAULT_ALLOW_SELF_SIGNED = false;
-    const DEFAULT_VERIFY_DEPTH = 10;
-
     /**
-     * {@inheritdoc}
+     * Creates a server on the given host and port.
+     *
+     * Note: Current CA file in PEM format can be downloaded from http://curl.haxx.se/ca/cacert.pem
+     *
+     * @param string $host IP address or unix socket path.
+     * @param int|null $port Port number or null for unix socket.
+     * @param mixed[] $options {
+     *     @var int $backlog Connection backlog size. Note that operating system setting SOMAXCONN may set an upper
+     *     limit and may need to be changed to allow a larger backlog size.
+     *     @var string $pem Path to PEM file containing certificate and private key to enable SSL on client connections.
+     *     @var string $passphrase PEM passphrase if applicable.
+     *     @var string $name Name to use as SNI identifier. If not set, name will be guessed based on $host.
+     *     @var bool $verify_peer True to verify client certificate. Normally should be false on the server.
+     *     @var bool $allow_self_signed Set to true to allow self-signed certificates. Defaults to false.
+     *     @var int $verify_depth Max levels of certificate authorities the verifier will transverse. Defaults to 10.
+     * }
+     *
+     * @return \Icicle\Socket\Server\Server
+     *
+     * @throws \Icicle\Exception\InvalidArgumentError If PEM file path given does not exist.
+     * @throws \Icicle\Socket\Exception\FailureException If the server socket could not be created.
      */
-    public function create(string $host, int $port = null, array $options = []): ServerInterface
-    {
-        $protocol = isset($options['protocol'])
-            ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
-        $queue = isset($options['backlog']) ? (int) $options['backlog'] : self::DEFAULT_BACKLOG;
-        $pem = isset($options['pem']) ? (string) $options['pem'] : null;
-        $passphrase = isset($options['passphrase']) ? (string) $options['passphrase'] : null;
-        $name = isset($options['name']) ? (string) $options['name'] : null;
-
-        $verify = isset($options['verify_peer']) ? (string) $options['verify_peer'] : self::DEFAULT_VERIFY_PEER;
-        $allowSelfSigned = isset($options['allow_self_signed'])
-            ? (bool) $options['allow_self_signed']
-            : self::DEFAULT_ALLOW_SELF_SIGNED;
-        $verifyDepth = isset($options['verify_depth']) ? (int) $options['verify_depth'] : self::DEFAULT_VERIFY_DEPTH;
-
-        $context = [];
-        
-        $context['socket'] = [];
-        $context['socket']['bindto'] = Socket\makeName($host, $port);
-        $context['socket']['backlog'] = $queue;
-        
-        if (null !== $pem) {
-            if (!file_exists($pem)) {
-                throw new InvalidArgumentError('No file found at given PEM path.');
-            }
-            
-            $context['ssl'] = [];
-
-            $context['ssl']['verify_peer'] = $verify;
-            $context['ssl']['verify_peer_name'] = $verify;
-            $context['ssl']['allow_self_signed'] = $allowSelfSigned;
-            $context['ssl']['verify_depth'] = $verifyDepth;
-
-            $context['ssl']['local_cert'] = $pem;
-            $context['ssl']['disable_compression'] = true;
-
-            $context['ssl']['SNI_enabled'] = true;
-            $context['ssl']['SNI_server_name'] = $name;
-            $context['ssl']['peer_name'] = $name;
-            
-            if (null !== $passphrase) {
-                $context['ssl']['passphrase'] = $passphrase;
-            }
-        }
-        
-        $context = stream_context_create($context);
-        
-        $uri = Socket\makeUri($protocol, $host, $port);
-        // Error reporting suppressed since stream_socket_server() emits an E_WARNING on failure (checked below).
-        $socket = @stream_socket_server($uri, $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
-        
-        if (!$socket || $errno) {
-            throw new FailureException(sprintf('Could not create server %s: Errno: %d; %s', $uri, $errno, $errstr));
-        }
-        
-        return new Server($socket);
-    }
+    public function create(string $host, int $port = null, array $options = []): Server;
 }

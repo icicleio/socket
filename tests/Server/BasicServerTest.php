@@ -12,15 +12,18 @@ namespace Icicle\Tests\Socket\Server;
 use Exception;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
+use Icicle\Loop\Loop as LoopInterface;
 use Icicle\Loop\SelectLoop;
+use Icicle\Loop\Watcher\Io;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\UnavailableException;
+use Icicle\Socket\Server\BasicServer;
 use Icicle\Socket\Server\Server;
-use Icicle\Socket\SocketInterface;
+use Icicle\Socket\Socket;
 use Icicle\Tests\Socket\TestCase;
 
-class ServerTest extends TestCase
+class BasicServerTest extends TestCase
 {
     const HOST_IPv4 = '127.0.0.1';
     const PORT = 51337;
@@ -63,12 +66,12 @@ class ServerTest extends TestCase
             $this->fail("Could not create server {$host}:{$port}: [Errno: {$errno}] {$errstr}");
         }
         
-        return new Server($socket);
+        return new BasicServer($socket);
     }
     
     public function testInvalidSocketType()
     {
-        $this->server = new Server(fopen('php://memory', 'r+'));
+        $this->server = new BasicServer(fopen('php://memory', 'r+'));
         
         $this->assertFalse($this->server->isOpen());
     }
@@ -89,7 +92,7 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(SocketInterface::class));
+                 ->with($this->isInstanceOf(Socket::class));
         
         $promise->done($callback);
         
@@ -117,7 +120,7 @@ class ServerTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(SocketInterface::class));
+            ->with($this->isInstanceOf(Socket::class));
 
         $promise->done($callback);
 
@@ -209,7 +212,7 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(SocketInterface::class));
+                 ->with($this->isInstanceOf(Socket::class));
         
         $promise1->done($callback);
         
@@ -249,10 +252,54 @@ class ServerTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(SocketInterface::class));
+                 ->with($this->isInstanceOf(Socket::class));
         
         $promise->done($callback);
         
         Loop\run();
+    }
+
+    public function testRebind()
+    {
+        $this->server = $this->createServer();
+
+        $io = $this->getMockBuilder(Io::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $loop = $this->getMock(LoopInterface::class);
+        $loop->expects($this->once())
+            ->method('poll')
+            ->will($this->returnValue($io));
+
+        Loop\loop($loop);
+
+        $this->server->rebind();
+    }
+
+    /**
+     * @depends testRebind
+     */
+    public function testRebindDuringAccept()
+    {
+        $this->server = $this->createServer();
+
+        $promise = new Coroutine($this->server->accept());
+
+
+        $poll = $this->getMockBuilder(Io::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $poll->expects($this->once())
+            ->method('listen');
+
+        $loop = $this->getMock(LoopInterface::class);
+        $loop->expects($this->once())
+            ->method('poll')
+            ->will($this->returnValue($poll));
+
+        Loop\loop($loop);
+
+        $this->server->rebind();
     }
 }

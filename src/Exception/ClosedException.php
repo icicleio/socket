@@ -9,4 +9,4 @@
 
 namespace Icicle\Socket\Exception;
 
-class ClosedException extends Exception {}
+class ClosedException extends \Exception implements Exception {}

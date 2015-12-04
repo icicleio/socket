@@ -9,7 +9,7 @@
 
 namespace Icicle\Socket;
 
-use Icicle\Socket\Connector\{Connector, ConnectorInterface};
+use Icicle\Socket\Connector\{Connector, DefaultConnector};
 use Icicle\Socket\Exception\FailureException;
 
 if (!function_exists(__NAMESPACE__ . '\connect')) {
@@ -30,18 +30,18 @@ if (!function_exists(__NAMESPACE__ . '\connect')) {
     }
 
     /**
-     * @param \Icicle\Socket\Connector\ConnectorInterface|null $connector
+     * @param \Icicle\Socket\Connector\Connector|null $connector
      *
-     * @return \Icicle\Socket\Connector\ConnectorInterface
+     * @return \Icicle\Socket\Connector\Connector
      */
-    function connector(ConnectorInterface $connector = null): ConnectorInterface
+    function connector(Connector $connector = null): Connector
     {
         static $instance;
 
         if (null !== $connector) {
             $instance = $connector;
         } elseif (null === $instance) {
-            $instance = new Connector();
+            $instance = new DefaultConnector();
         }
 
         return $instance;

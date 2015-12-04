@@ -9,4 +9,4 @@
 
 namespace Icicle\Socket\Exception;
 
-class BusyError extends Error {}
+class BusyError extends \Exception implements Error {}

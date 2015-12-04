@@ -9,33 +9,16 @@
 
 namespace Icicle\Socket\Datagram;
 
-use Icicle\Socket;
-use Icicle\Socket\Exception\FailureException;
-
-class DatagramFactory implements DatagramFactoryInterface
+interface DatagramFactory
 {
     /**
-     * {@inheritdoc}
+     * @param string $host
+     * @param int|null $port
+     * @param mixed[] $options
+     *
+     * @return \Icicle\Socket\Datagram\Datagram
+     *
+     * @throws \Icicle\Socket\Exception\FailureException If creating the datagram fails.
      */
-    public function create(string $host, int $port = null, array $options = []): DatagramInterface
-    {
-        $context = [];
-        
-        $context['socket'] = [];
-        $context['socket']['bindto'] = Socket\makeName($host, $port);
-        
-        $context = stream_context_create($context);
-        
-        $uri = Socket\makeUri('udp', $host, $port);
-        // Error reporting suppressed since stream_socket_server() emits an E_WARNING on failure (checked below).
-        $socket = @stream_socket_server($uri, $errno, $errstr, STREAM_SERVER_BIND, $context);
-        
-        if (!$socket || $errno) {
-            throw new FailureException(
-                sprintf('Could not create datagram on %s: Errno: %d; %s', $uri, $errno, $errstr)
-            );
-        }
-        
-        return new Datagram($socket);
-    }
+    public function create(string $host, int $port = null, array $options = []): Datagram;
 }

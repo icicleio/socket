@@ -9,4 +9,4 @@
 
 namespace Icicle\Socket\Exception;
 
-class FailureException extends Exception {}
+class FailureException extends \Exception implements Exception {}
