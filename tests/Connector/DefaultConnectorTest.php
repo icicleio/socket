@@ -349,11 +349,11 @@ class DefaultConnectorTest extends TestCase
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new NetworkSocket($socket);
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_CLIENT, self::TIMEOUT));
                 return $coroutine->then(function () use ($socket) {
                     return $socket;
                 });
@@ -400,11 +400,11 @@ class DefaultConnectorTest extends TestCase
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new NetworkSocket($socket);
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_CLIENT, self::TIMEOUT));
                 return $coroutine->then(function () use ($socket) {
                     return $socket;
                 });
@@ -451,11 +451,11 @@ class DefaultConnectorTest extends TestCase
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
                 $socket = new NetworkSocket($socket);
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_ANY_CLIENT, self::TIMEOUT));
                 return $coroutine->then(function () use ($socket) {
                     return $socket;
                 });
