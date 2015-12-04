@@ -5,16 +5,16 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Server\ServerInterface;
-use Icicle\Socket\Server\ServerFactory;
-use Icicle\Socket\SocketInterface;
+use Icicle\Socket\Server\Server;
+use Icicle\Socket\Server\DefaultServerFactory;
+use Icicle\Socket\Socket;
 
 // Connect using `nc localhost 60000`.
 
-$coroutine = Coroutine\create(function (ServerInterface $server) {
+$coroutine = Coroutine\create(function (Server $server) {
     $sockets = new SplObjectStorage();
     
-    $handler = Coroutine\wrap(function (SocketInterface $socket) use (&$sockets) {
+    $handler = Coroutine\wrap(function (Socket $socket) use (&$sockets) {
         $sockets->attach($socket);
         $name = $socket->getRemoteAddress() . ':' . $socket->getRemotePort();
 
@@ -54,7 +54,7 @@ $coroutine = Coroutine\create(function (ServerInterface $server) {
     while ($server->isOpen()) {
         $handler(yield $server->accept());
     }
-}, (new ServerFactory())->create('127.0.0.1', 60000));
+}, (new DefaultServerFactory())->create('127.0.0.1', 60000));
 
 Loop\run();
 

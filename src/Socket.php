@@ -9,117 +9,60 @@
 
 namespace Icicle\Socket;
 
-use Icicle\Socket\Exception\FailureException;
-use Icicle\Stream\Pipe\DuplexPipe;
+use Icicle\Stream\DuplexStream;
+use Icicle\Stream\Resource;
 
-class Socket extends DuplexPipe implements SocketInterface
+interface Socket extends DuplexStream, Resource
 {
     /**
-     * @var int
+     * @coroutine
+     *
+     * @param int $method One of the server crypto flags, e.g. STREAM_CRYPTO_METHOD_TLS_SERVER for incoming (remote)
+     *     clients, STREAM_CRYPTO_METHOD_TLS_CLIENT for outgoing (local) clients.
+     * @param int|float $timeout Seconds to wait between reads/writes to enable crypto before failing.
+     *
+     * @return \Generator
+     *
+     * @resolve $this
+     *
+     * @reject \Icicle\Socket\Exception\FailureException If enabling crypto fails.
+     * @reject \Icicle\Socket\Exception\ClosedException If the client has been closed.
+     * @reject \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
      */
-    private $crypto = 0;
+    public function enableCrypto($method, $timeout = 0);
     
     /**
-     * @var string
-     */
-    private $remoteAddress;
-    
-    /**
-     * @var int
-     */
-    private $remotePort;
-    
-    /**
-     * @var string
-     */
-    private $localAddress;
-    
-    /**
-     * @var int
-     */
-    private $localPort;
-    
-    /**
-     * @param resource $socket Stream socket resource.
-     */
-    public function __construct($socket)
-    {
-        parent::__construct($socket);
-        
-        try {
-            list($this->remoteAddress, $this->remotePort) = getName($socket, true);
-            list($this->localAddress, $this->localPort) = getName($socket, false);
-        } catch (FailureException $exception) {
-            $this->close();
-        }
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    public function enableCrypto($method, $timeout = 0)
-    {
-        $method = (int) $method;
-
-        yield $this->await($timeout);
-
-        $resource = $this->getResource();
-
-        do {
-            // Error reporting suppressed since stream_socket_enable_crypto() emits E_WARNING on failure.
-            $result = @stream_socket_enable_crypto($resource, (bool) $method, $method);
-        } while (0 === $result && !(yield $this->poll($timeout)));
-
-        if ($result) {
-            $this->crypto = $method;
-            yield $this;
-            return;
-        }
-
-        $message = 'Failed to enable crypto.';
-        if ($error = error_get_last()) {
-            $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
-        }
-        throw new FailureException($message);
-    }
-    
-    /**
+     * Determines if cyrpto has been enabled.
+     *
      * @return bool
      */
-    public function isCryptoEnabled()
-    {
-        return 0 !== $this->crypto;
-    }
+    public function isCryptoEnabled();
     
     /**
-     * {@inheritdoc}
+     * Returns the remote IP or socket path as a string representation.
+     *
+     * @return string
      */
-    public function getRemoteAddress()
-    {
-        return $this->remoteAddress;
-    }
+    public function getRemoteAddress();
     
     /**
-     * {@inheritdoc}
+     * Returns the remote port number (or 0 if unix socket).
+     *
+     * @return int
      */
-    public function getRemotePort()
-    {
-        return $this->remotePort;
-    }
+    public function getRemotePort();
     
     /**
-     * {@inheritdoc}
+     * Returns the local IP or socket path as a string representation.
+     *
+     * @return string
      */
-    public function getLocalAddress()
-    {
-        return $this->localAddress;
-    }
+    public function getLocalAddress();
     
     /**
-     * {@inheritdoc}
+     * Returns the local port number (or 0 if unix socket).
+     *
+     * @return int
      */
-    public function getLocalPort()
-    {
-        return $this->localPort;
-    }
+    public function getLocalPort();
 }

@@ -13,10 +13,9 @@ use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
 use Icicle\Socket;
-use Icicle\Socket\Connector\ConnectorInterface;
-use Icicle\Socket\Socket as ClientSocket;
-use Icicle\Socket\SocketInterface;
-use Icicle\Tests\Socket\Connector\ConnectorTest;
+use Icicle\Socket\Connector\Connector;
+use Icicle\Socket\Socket as SocketInterface;
+use Icicle\Tests\Socket\Connector\DefaultConnectorTest as ConnectorTest;
 
 class FunctionsTest extends TestCase
 {
@@ -29,7 +28,7 @@ class FunctionsTest extends TestCase
     {
         $connector = Socket\connector();
 
-        $this->assertInstanceOf(ConnectorInterface::class, $connector);
+        $this->assertInstanceOf(Connector::class, $connector);
     }
 
     public function testConnect()
@@ -44,7 +43,7 @@ class FunctionsTest extends TestCase
 
         $promise->done($callback);
 
-        $promise->done(function (ClientSocket $socket) {
+        $promise->done(function (SocketInterface $socket) {
             $this->assertTrue($socket->isOpen());
             $this->assertSame($socket->getLocalAddress(), ConnectorTest::HOST_IPv4);
             $this->assertSame($socket->getRemoteAddress(), ConnectorTest::HOST_IPv4);

@@ -5,14 +5,14 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
-use Icicle\Socket\Datagram\DatagramInterface;
-use Icicle\Socket\Datagram\DatagramFactory;
+use Icicle\Socket\Datagram\Datagram;
+use Icicle\Socket\Datagram\DefaultDatagramFactory;
 
 // Connect using `nc -u localhost 60000`.
 
-$datagram = (new DatagramFactory())->create('127.0.0.1', 60000);
+$datagram = (new DefaultDatagramFactory())->create('127.0.0.1', 60000);
 
-$generator = function (DatagramInterface $datagram) {
+$generator = function (Datagram $datagram) {
     echo "Echo datagram running on {$datagram->getAddress()}:{$datagram->getPort()}\n";
     
     try {

@@ -9,180 +9,35 @@
 
 namespace Icicle\Socket\Server;
 
-use Exception;
-use Icicle\Loop;
-use Icicle\Promise\Deferred;
-use Icicle\Socket;
-use Icicle\Socket\Socket as ClientSocket;
-use Icicle\Socket\Exception\BusyError;
-use Icicle\Socket\Exception\ClosedException;
-use Icicle\Socket\Exception\FailureException;
-use Icicle\Socket\Exception\UnavailableException;
-use Icicle\Stream\StreamResource;
+use Icicle\Stream\Resource;
 
-class Server extends StreamResource implements ServerInterface
+interface Server extends Resource
 {
     /**
-     * Listening hostname or IP address.
+     * @coroutine
      *
-     * @var int
-     */
-    private $address;
-    
-    /**
-     * Listening port.
+     * Accepts incoming client connections.
      *
-     * @var int
-     */
-    private $port;
-    
-    /**
-     * @var \Icicle\Promise\Deferred
-     */
-    private $deferred;
-    
-    /**
-     * @var \Icicle\Loop\Events\SocketEventInterface
-     */
-    private $poll;
-    
-    /**
-     * @param resource $socket
-     */
-    public function __construct($socket)
-    {
-        parent::__construct($socket);
-
-        $this->poll = $this->createPoll();
-
-        try {
-            list($this->address, $this->port) = Socket\getName($socket, false);
-        } catch (FailureException $exception) {
-            $this->close();
-        }
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        $this->free();
-    }
-
-    /**
-     * Frees resources associated with the server and closes the server.
+     * @return \Generator
      *
-     * @param Exception $exception Reason for closing the server.
-     */
-    protected function free(Exception $exception = null)
-    {
-        $this->poll->free();
-
-        if (null !== $this->deferred) {
-            $this->deferred->getPromise()->cancel(
-                $exception ?: new ClosedException('The server was unexpectedly closed.')
-            );
-        }
-
-        parent::close();
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    public function accept()
-    {
-        if (null !== $this->deferred) {
-            throw new BusyError('Already waiting on server.');
-        }
-        
-        if (!$this->isOpen()) {
-            throw new UnavailableException('The server has been closed.');
-        }
-
-        // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-        $socket = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
-
-        if ($socket) {
-            yield $this->createSocket($socket);
-            return;
-        }
-
-        $this->poll->listen();
-        
-        $this->deferred = new Deferred(function () {
-            $this->poll->cancel();
-        });
-
-        try {
-            yield $this->deferred->getPromise();
-        } finally {
-            $this->deferred = null;
-        }
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    public function getAddress()
-    {
-        return $this->address;
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    public function getPort()
-    {
-        return $this->port;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function rebind()
-    {
-        $pending = $this->poll->isPending();
-        $this->poll->free();
-
-        $this->poll = $this->createPoll();
-
-        if ($pending) {
-            $this->poll->listen();
-        }
-    }
-
-    /**
-     * @param resource $socket Stream socket resource.
+     * @resolve \Icicle\Socket\Client\ClientInterface
      *
-     * @return \Icicle\Socket\Socket
+     * @throws \Icicle\Socket\Exception\BusyError If an accept request was already pending on the server.
+     * @throws \Icicle\Socket\Exception\UnavailableException If the server has been closed.
      */
-    protected function createSocket($socket)
-    {
-        return new ClientSocket($socket);
-    }
-
+    public function accept();
+    
     /**
-     * @return \Icicle\Loop\Events\SocketEventInterface
+     * Returns the IP address or socket path on which the server is listening.
+     *
+     * @return string
      */
-    private function createPoll()
-    {
-        return Loop\poll($this->getResource(), function ($resource) {
-            // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
-            $socket = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
-
-            // Having difficulty finding a test to cover this scenario, but it has been seen in production.
-            if (!$socket) {
-                $this->poll->listen(); // Accept failed, let's go around again.
-                return;
-            }
-
-            try {
-                $this->deferred->resolve($this->createSocket($socket));
-            } catch (Exception $exception) {
-                $this->deferred->reject($exception);
-            }
-        });
-    }
+    public function getAddress();
+    
+    /**
+     * Returns the port on which the server is listening (or 0 if unix socket).
+     *
+     * @return int
+     */
+    public function getPort();
 }

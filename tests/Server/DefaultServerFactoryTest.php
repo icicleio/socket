@@ -12,13 +12,12 @@ namespace Icicle\Tests\Socket\Server;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
+use Icicle\Socket\Server\DefaultServerFactory;
 use Icicle\Socket\Server\Server;
-use Icicle\Socket\Server\ServerFactory;
-use Icicle\Socket\Server\ServerInterface;
-use Icicle\Socket\SocketInterface;
+use Icicle\Socket\Socket;
 use Icicle\Tests\Socket\TestCase;
 
-class ServerFactoryTest extends TestCase
+class DefaultServerFactoryTest extends TestCase
 {
     const HOST_IPv4 = '127.0.0.1';
     const HOST_IPv6 = '[::1]';
@@ -35,7 +34,7 @@ class ServerFactoryTest extends TestCase
     public function setUp()
     {
         Loop\loop(new SelectLoop());
-        $this->factory = new ServerFactory();
+        $this->factory = new DefaultServerFactory();
     }
     
     public function tearDown()
@@ -49,7 +48,7 @@ class ServerFactoryTest extends TestCase
     {
         $this->server = $this->factory->create(self::HOST_IPv4, self::PORT);
         
-        $this->assertInstanceOf(ServerInterface::class, $this->server);
+        $this->assertInstanceOf(Server::class, $this->server);
         
         $this->assertSame(self::HOST_IPv4, $this->server->getAddress());
         $this->assertSame(self::PORT, $this->server->getPort());
@@ -61,7 +60,7 @@ class ServerFactoryTest extends TestCase
     {
         $this->server = $this->factory->create(self::HOST_IPv6, self::PORT);
         
-        $this->assertInstanceOf(ServerInterface::class, $this->server);
+        $this->assertInstanceOf(Server::class, $this->server);
         
         $this->assertSame(self::HOST_IPv6, $this->server->getAddress());
         $this->assertSame(self::PORT, $this->server->getPort());
@@ -71,7 +70,7 @@ class ServerFactoryTest extends TestCase
     {
         $this->server = $this->factory->create(self::HOST_UNIX, null);
 
-        $this->assertInstanceOf(ServerInterface::class, $this->server);
+        $this->assertInstanceOf(Server::class, $this->server);
 
         $this->assertSame(self::HOST_UNIX, $this->server->getAddress());
         $this->assertSame(0, $this->server->getPort());
@@ -118,7 +117,7 @@ class ServerFactoryTest extends TestCase
 
         $this->server = $this->factory->create(self::HOST_IPv4, self::PORT, ['pem' => $path]);
         
-        $this->assertInstanceOf(ServerInterface::class, $this->server);
+        $this->assertInstanceOf(Server::class, $this->server);
         
         $promise = new Coroutine($this->server->accept());
         
@@ -132,7 +131,7 @@ class ServerFactoryTest extends TestCase
         
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(SocketInterface::class));
+                 ->with($this->isInstanceOf(Socket::class));
         
         $promise->done($callback);
         
@@ -142,7 +141,7 @@ class ServerFactoryTest extends TestCase
     }
     
     /**
-     * @expectedException \Icicle\Socket\Exception\InvalidArgumentError
+     * @expectedException \Icicle\Exception\InvalidArgumentError
      */
     public function testCreateWithInvalidPemPath()
     {

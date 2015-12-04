@@ -9,4 +9,4 @@
 
 namespace Icicle\Socket\Exception;
 
-class Error extends \Exception {}
+interface Error extends \Icicle\Exception\Error, Throwable {}

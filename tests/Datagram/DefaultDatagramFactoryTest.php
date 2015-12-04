@@ -10,12 +10,12 @@
 namespace Icicle\Tests\Socket\Datagram;
 
 use Icicle\Loop;
+use Icicle\Loop\SelectLoop;
 use Icicle\Socket\Datagram\Datagram;
-use Icicle\Socket\Datagram\DatagramInterface;
-use Icicle\Socket\Datagram\DatagramFactory;
+use Icicle\Socket\Datagram\DefaultDatagramFactory;
 use Icicle\Tests\Socket\TestCase;
 
-class DatagramFactoryTest extends TestCase
+class DefaultDatagramFactoryTest extends TestCase
 {
     const HOST_IPv4 = '127.0.0.1';
     const HOST_IPv6 = '[::1]';
@@ -32,7 +32,8 @@ class DatagramFactoryTest extends TestCase
     
     public function setUp()
     {
-        $this->factory = new DatagramFactory();
+        Loop\loop(new SelectLoop());
+        $this->factory = new DefaultDatagramFactory();
     }
     
     public function tearDown()
@@ -48,7 +49,7 @@ class DatagramFactoryTest extends TestCase
     {
         $this->datagram = $this->factory->create(self::HOST_IPv4, self::PORT);
         
-        $this->assertInstanceOf(DatagramInterface::class, $this->datagram);
+        $this->assertInstanceOf(Datagram::class, $this->datagram);
         
         $this->assertSame(self::HOST_IPv4, $this->datagram->getAddress());
         $this->assertSame(self::PORT, $this->datagram->getPort());
@@ -58,7 +59,7 @@ class DatagramFactoryTest extends TestCase
     {
         $this->datagram = $this->factory->create(self::HOST_IPv6, self::PORT);
         
-        $this->assertInstanceOf(DatagramInterface::class, $this->datagram);
+        $this->assertInstanceOf(Datagram::class, $this->datagram);
         
         $this->assertSame(self::HOST_IPv6, $this->datagram->getAddress());
         $this->assertSame(self::PORT, $this->datagram->getPort());

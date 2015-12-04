@@ -10,20 +10,21 @@
 namespace Icicle\Tests\Socket\Datagram;
 
 use Exception;
+use Icicle\Awaitable\Exception\TimeoutException;
 use Icicle\Coroutine\Coroutine;
+use Icicle\Exception\InvalidArgumentError;
 use Icicle\Loop;
-use Icicle\Loop\Events\SocketEventInterface;
-use Icicle\Loop\LoopInterface;
+use Icicle\Loop\Loop as LoopInterface;
 use Icicle\Loop\SelectLoop;
-use Icicle\Promise\Exception\TimeoutException;
+use Icicle\Loop\Watcher\Io;
+use Icicle\Socket\Datagram\BasicDatagram;
 use Icicle\Socket\Datagram\Datagram;
 use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
-use Icicle\Socket\Exception\InvalidArgumentError;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Tests\Socket\TestCase;
 
-class DatagramTest extends TestCase
+class BasicDatagramTest extends TestCase
 {
     const HOST_IPv4 = '127.0.0.1';
     const HOST_IPv6 = '[::1]';
@@ -67,7 +68,7 @@ class DatagramTest extends TestCase
             $this->fail("Could not create datagram on {$host}:{$port}: [Errno: {$errno}] {$errstr}");
         }
 
-        return new Datagram($socket);
+        return new BasicDatagram($socket);
     }
 
     public function createDatagramIPv6()
@@ -89,12 +90,12 @@ class DatagramTest extends TestCase
             $this->fail("Could not create datagram on {$host}:{$port}: [Errno: {$errno}] {$errstr}");
         }
 
-        return new Datagram($socket);
+        return new BasicDatagram($socket);
     }
 
     public function testInvalidSocketType()
     {
-        $this->datagram = new Datagram(fopen('php://memory', 'r+'));
+        $this->datagram = new BasicDatagram(fopen('php://memory', 'r+'));
 
         $this->assertFalse($this->datagram->isOpen());
     }
@@ -196,9 +197,9 @@ class DatagramTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(ClosedException::class));
+            ->with($this->identicalTo(''));
 
-        $promise->done($this->createCallback(0), $callback);
+        $promise->done($callback);
 
         $this->datagram->close();
 
@@ -705,13 +706,17 @@ class DatagramTest extends TestCase
 
         $loop = $this->getMock(LoopInterface::class);
 
+        $io = $this->getMockBuilder(Io::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $loop->expects($this->once())
             ->method('poll')
-            ->will($this->returnValue($this->getMock(SocketEventInterface::class)));
+            ->will($this->returnValue($io));
 
         $loop->expects($this->once())
             ->method('await')
-            ->will($this->returnValue($this->getMock(SocketEventInterface::class)));
+            ->will($this->returnValue($io));
 
         Loop\loop($loop);
 
@@ -727,11 +732,15 @@ class DatagramTest extends TestCase
 
         $promise = new Coroutine($this->datagram->receive());
 
-        $poll = $this->getMock(SocketEventInterface::class);
+        $poll = $this->getMockBuilder(Io::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $poll->expects($this->once())
             ->method('listen');
 
-        $await = $this->getMock(SocketEventInterface::class);
+        $await = $this->getMockBuilder(Io::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $loop = $this->getMock(LoopInterface::class);
         $loop->expects($this->once())

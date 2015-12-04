@@ -10,17 +10,19 @@
 namespace Icicle\Tests\Socket;
 
 use Exception;
+use Icicle\Awaitable;
+use Icicle\Awaitable\Promise;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Loop\SelectLoop;
-use Icicle\Promise;
-use Icicle\Socket\Socket;
 use Icicle\Socket\Exception\FailureException;
+use Icicle\Socket\NetworkSocket;
+use Icicle\Socket\Socket;
 use Icicle\Stream\Exception\ClosedException;
 use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\UnwritableException;
 
-class SocketTest extends TestCase
+class NetworkSocketTest extends TestCase
 {
     const HOST_IPv4 = '127.0.0.1';
     const PORT = 51337;
@@ -69,10 +71,10 @@ class SocketTest extends TestCase
             $this->fail("Could not connect to {$uri}; Errno: {$errno}; {$errstr}");
         }
         
-        return new Promise\Promise(function ($resolve, $reject) use ($socket) {
+        return new Promise(function ($resolve, $reject) use ($socket) {
             $await = Loop\await($socket, function ($resource, $expired) use (&$await, $resolve, $reject) {
                 $await->free();
-                $resolve(new Socket($resource));
+                $resolve(new NetworkSocket($resource));
             });
             
             $await->listen();
@@ -133,7 +135,7 @@ class SocketTest extends TestCase
     
     public function testInvalidSocketType()
     {
-        $socket = new Socket(fopen('php://memory', 'r+'));
+        $socket = new NetworkSocket(fopen('php://memory', 'r+'));
         
         $this->assertFalse($socket->isOpen());
     }
@@ -153,7 +155,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done();
             })
@@ -187,7 +189,7 @@ class SocketTest extends TestCase
         $promise = $promise->then(function (Socket $socket) {
             $promise1 = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
             $promise2 = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
-            return Promise\all([$promise1, $promise2]);
+            return Awaitable\all([$promise1, $promise2]);
         });
 
         $callback = $this->createCallback(1);
@@ -253,7 +255,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
@@ -289,7 +291,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
@@ -326,7 +328,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
@@ -363,7 +365,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
@@ -398,7 +400,7 @@ class SocketTest extends TestCase
         $promise = $promise
             ->tap(function () use ($server) {
                 $socket = stream_socket_accept($server);
-                $socket = new Socket($socket);
+                $socket = new NetworkSocket($socket);
                 $coroutine = new Coroutine($socket->write('Test string'));
                 $coroutine->done();
                 $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_SERVER, self::TIMEOUT));

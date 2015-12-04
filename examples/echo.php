@@ -6,13 +6,13 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
 use Icicle\Socket\Server\Server;
-use Icicle\Socket\Server\ServerFactory;
-use Icicle\Socket\SocketInterface;
+use Icicle\Socket\Server\DefaultServerFactory;
+use Icicle\Socket\Socket;
 
 // Connect using `nc localhost 60000`.
 
 $generator = function (Server $server) {
-    $generator = function (SocketInterface $socket) {
+    $generator = function (Socket $socket) {
         try {
             yield $socket->write("Want to play shadow? (Type 'exit' to quit)\n");
 			
@@ -43,7 +43,7 @@ $generator = function (Server $server) {
 };
 
 $coroutine = new Coroutine($generator(
-    (new ServerFactory())->create('127.0.0.1', 60000)
+    (new DefaultServerFactory())->create('127.0.0.1', 60000)
 ));
 
 Loop\run();
