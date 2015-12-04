@@ -66,21 +66,19 @@ class NetworkSocket extends DuplexPipe implements Socket
         } else {
             yield from $this->poll($timeout);
 
-            if (defined('STREAM_CRYPTO_METHOD_ANY_SERVER')) { // PHP 5.6+
-                $raw = stream_socket_recvfrom($resource, 11, STREAM_PEEK);
-                if (11 > strlen($raw)) {
-                    throw new FailureException('Failed to read crypto handshake.');
-                }
+            $raw = stream_socket_recvfrom($resource, 11, STREAM_PEEK);
+            if (11 > strlen($raw)) {
+                throw new FailureException('Failed to read crypto handshake.');
+            }
 
-                $data = unpack('ctype/nversion/nlength/Nembed/nmax-version', $raw);
-                if (0x16 !== $data['type']) {
-                    throw new FailureException('Invalid crypto handshake.');
-                }
+            $data = unpack('ctype/nversion/nlength/Nembed/nmax-version', $raw);
+            if (0x16 !== $data['type']) {
+                throw new FailureException('Invalid crypto handshake.');
+            }
 
-                $version = $this->selectCryptoVersion($data['max-version']);
-                if ($method & $version) { // Check if version was available in $method.
-                    $method = $version;
-                }
+            $version = $this->selectCryptoVersion($data['max-version']);
+            if ($method & $version) { // Check if version was available in $method.
+                $method = $version;
             }
         }
 
