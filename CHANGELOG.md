@@ -1,5 +1,15 @@
 # Changelog
 
+### v0.5.0
+
+- Changes
+    - All interface names have been changed to remove the `Interface` suffix. Since most classes in this package would now conflict with the interface names, the classes are prefixed with either `Basic` or `Default` (e.g.: `Icicle\Socket\Server\BasicServer` and `Icicle\Socket\Connector\DefaultConnector`).
+
+- New Features
+    - Improved enabling crypto on `Icicle\Socket\NetworkSocket` to force the highest TLS version supported by the client and allowed by the `$method` parameter to be selected by the server.
+
+---
+
 ### v0.4.1
 
 - New Features
