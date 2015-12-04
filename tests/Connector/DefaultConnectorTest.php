@@ -353,7 +353,10 @@ class DefaultConnectorTest extends TestCase
                 $coroutine->done($this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                return $coroutine->then(function () use ($socket) {
+                    return $socket;
+                });
             })
             ->tap(function (Socket $socket) {
                 $this->assertTrue($socket->isCryptoEnabled());
@@ -401,7 +404,10 @@ class DefaultConnectorTest extends TestCase
                 $coroutine->done($this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                return $coroutine->then(function () use ($socket) {
+                    return $socket;
+                });
             })
             ->tap(function (Socket $socket) {
                 $this->assertTrue($socket->isCryptoEnabled());
@@ -449,7 +455,10 @@ class DefaultConnectorTest extends TestCase
                 $coroutine->done($this->createCallback(0), $this->createCallback(1));
             })
             ->then(function (Socket $socket) {
-                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                return $coroutine->then(function () use ($socket) {
+                    return $socket;
+                });
             })
             ->tap(function (Socket $socket) {
                 $this->assertTrue($socket->isCryptoEnabled());

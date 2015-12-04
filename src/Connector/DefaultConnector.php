@@ -59,6 +59,7 @@ class DefaultConnector implements Connector
             'SNI_server_name' => $name,
             'peer_name' => $name,
             'disable_compression' => true,
+            'honor_cipher_order' => true,
         ];
         
         if (null !== $cafile) {

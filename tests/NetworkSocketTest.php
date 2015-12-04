@@ -160,7 +160,10 @@ class NetworkSocketTest extends TestCase
                 $coroutine->done();
             })
             ->then(function (Socket $socket) {
-                return new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                $coroutine = new Coroutine($socket->enableCrypto(STREAM_CRYPTO_METHOD_TLS_CLIENT, self::TIMEOUT));
+                return $coroutine->then(function () use ($socket) {
+                    return $socket;
+                });
             })
             ->tap(function (Socket $socket) {
                 $this->assertTrue($socket->isCryptoEnabled());

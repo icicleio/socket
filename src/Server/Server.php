@@ -20,7 +20,7 @@ interface Server extends Resource
      *
      * @return \Generator
      *
-     * @resolve \Icicle\Socket\Client\ClientInterface
+     * @resolve \Icicle\Socket\Socket
      *
      * @throws \Icicle\Socket\Exception\BusyError If an accept request was already pending on the server.
      * @throws \Icicle\Socket\Exception\UnavailableException If the server has been closed.

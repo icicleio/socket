@@ -23,16 +23,16 @@ interface Socket extends DuplexStream, Resource
      *
      * @return \Generator
      *
-     * @resolve $this
+     * @resolve null
      *
-     * @reject \Icicle\Socket\Exception\FailureException If enabling crypto fails.
-     * @reject \Icicle\Socket\Exception\ClosedException If the client has been closed.
-     * @reject \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
+     * @throws \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
+     * @throws \Icicle\Socket\Exception\FailureException If enabling crypto fails.
+     * @throws \Icicle\Socket\Exception\ClosedException If the client has been closed.
      */
     public function enableCrypto($method, $timeout = 0);
     
     /**
-     * Determines if cyrpto has been enabled.
+     * Determines if cyrpto is enabled.
      *
      * @return bool
      */

@@ -61,9 +61,30 @@ class NetworkSocket extends DuplexPipe implements Socket
     {
         $method = (int) $method;
 
-        yield $this->await($timeout);
-
         $resource = $this->getResource();
+
+        if ($method & 1 || 0 === $method) {
+            yield $this->await($timeout);
+        } else {
+            yield $this->poll($timeout);
+
+            if (defined('STREAM_CRYPTO_METHOD_ANY_SERVER')) { // PHP 5.6+
+                $raw = stream_socket_recvfrom($resource, 11, STREAM_PEEK);
+                if (11 > strlen($raw)) {
+                    throw new FailureException('Failed to read crypto handshake.');
+                }
+
+                $data = unpack('ctype/nversion/nlength/Nembed/nmax-version', $raw);
+                if (0x16 !== $data['type']) {
+                    throw new FailureException('Invalid crypto handshake.');
+                }
+
+                $version = $this->selectCryptoVersion($data['max-version']);
+                if ($method & $version) { // Check if version was available in $method.
+                    $method = $version;
+                }
+            }
+        }
 
         do {
             // Error reporting suppressed since stream_socket_enable_crypto() emits E_WARNING on failure.
@@ -72,7 +93,7 @@ class NetworkSocket extends DuplexPipe implements Socket
 
         if ($result) {
             $this->crypto = $method;
-            yield $this;
+            yield null;
             return;
         }
 
@@ -81,6 +102,23 @@ class NetworkSocket extends DuplexPipe implements Socket
             $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
         }
         throw new FailureException($message);
+    }
+
+    /**
+     * Returns highest supported crypto method constant based on protocol version identifier.
+     *
+     * @param int $version
+     *
+     * @return int
+     */
+    private function selectCryptoVersion($version)
+    {
+        switch ($version) {
+            case 0x300: return STREAM_CRYPTO_METHOD_SSLv3_SERVER;
+            case 0x301: return STREAM_CRYPTO_METHOD_TLSv1_0_SERVER;
+            case 0x302: return STREAM_CRYPTO_METHOD_TLSv1_1_SERVER;
+            default:    return STREAM_CRYPTO_METHOD_TLSv1_2_SERVER;
+        }
     }
     
     /**
