@@ -14,7 +14,7 @@ $server = (new DefaultServerFactory())->create('127.0.0.1', 8080, ['backlog' => 
 $generator = function (Server $server) {
     $generator = function (Socket $socket) {
         try {
-            $data = yield $socket->read();
+            $data = yield from $socket->read();
             
             $microtime = sprintf("%0.4f", microtime(true));
             $message = "Received the following request ({$microtime}):\r\n\r\n{$data}";
@@ -27,7 +27,7 @@ $generator = function (Server $server) {
             $data .= "\r\n";
             $data .= $message;
             
-            yield $socket->write($data);
+            yield from $socket->write($data);
         } finally {
             $socket->close();
         }
@@ -35,7 +35,7 @@ $generator = function (Server $server) {
     
     while ($server->isOpen()) {
         $coroutine = new Coroutine(
-            $generator(yield $server->accept())
+            $generator(yield from $server->accept())
         );
     }
 };

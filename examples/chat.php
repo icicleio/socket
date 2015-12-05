@@ -21,22 +21,22 @@ $coroutine = Coroutine\create(function (Server $server) {
         try {
             foreach ($sockets as $stream) {
                 if ($socket !== $stream) {
-                    yield $stream->write("{$name} connected.\n");
+                    yield from $stream->write("{$name} connected.\n");
                 }
             }
 
-            yield $socket->write("Welcome {$name}!\n");
+            yield from $socket->write("Welcome {$name}!\n");
             
             while ($socket->isReadable()) {
-                $data = trim(yield $socket->read());
+                $data = trim(yield from $socket->read());
                 
                 if ("/exit" === $data) {
-                    yield $socket->end("Goodbye!\n");
+                    yield from $socket->end("Goodbye!\n");
                 } elseif ('' !== $data) {
                     $message = "{$name}: {$data}\n";
                     foreach ($sockets as $stream) {
                         if ($socket !== $stream) {
-                            yield $stream->write($message);
+                            yield from $stream->write($message);
                         }
                     }
                 }
@@ -47,12 +47,12 @@ $coroutine = Coroutine\create(function (Server $server) {
 
         $sockets->detach($socket);
         foreach ($sockets as $stream) {
-            yield $stream->write("{$name} disconnected.\n");
+            yield from $stream->write("{$name} disconnected.\n");
         }
     });
     
     while ($server->isOpen()) {
-        $handler(yield $server->accept());
+        $handler(yield from $server->accept());
     }
 }, (new DefaultServerFactory())->create('127.0.0.1', 60000));
 

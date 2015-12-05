@@ -14,17 +14,17 @@ use Icicle\Socket\Socket;
 $generator = function (Server $server) {
     $generator = function (Socket $socket) {
         try {
-            yield $socket->write("Want to play shadow? (Type 'exit' to quit)\n");
+            yield from $socket->write("Want to play shadow? (Type 'exit' to quit)\n");
 			
             while ($socket->isReadable()) {
-                $data = yield $socket->read();
+                $data = yield from $socket->read();
                 
                 $data = trim($data, "\n");
                 
                 if ("exit" === $data) {
-                    yield $socket->end("Goodbye!\n");
+                    yield from $socket->end("Goodbye!\n");
                 } else {
-                    yield $socket->write("Echo: {$data}\n");
+                    yield from $socket->write("Echo: {$data}\n");
                 }
             }
         } catch (Exception $e) {
@@ -37,7 +37,7 @@ $generator = function (Server $server) {
     
     while ($server->isOpen()) {
         $coroutine = new Coroutine(
-            $generator(yield $server->accept())
+            $generator(yield from $server->accept())
         );
     }
 };

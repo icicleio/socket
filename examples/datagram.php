@@ -17,9 +17,9 @@ $generator = function (Datagram $datagram) {
     
     try {
         while ($datagram->isOpen()) {
-            list($address, $port, $data) = yield $datagram->receive();
+            list($address, $port, $data) = yield from $datagram->receive();
             $data = trim($data, "\n");
-            yield $datagram->send($address, $port, "Echo: {$data}\n");
+            yield from $datagram->send($address, $port, "Echo: {$data}\n");
         }
     } catch (Exception $e) {
         echo "Error: {$e->getMessage()}\n";
