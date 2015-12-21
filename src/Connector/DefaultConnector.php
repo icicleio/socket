@@ -26,13 +26,13 @@ class DefaultConnector implements Connector
      */
     public function connect(string $ip, int $port = null, array $options = []): \Generator
     {
-        $protocol = (string) $options['protocol'] ?? (null === $port ? 'unix' : 'tcp');
-        $allowSelfSigned = (bool) $options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED;
-        $timeout = (float) $options['timeout'] ?? self::DEFAULT_CONNECT_TIMEOUT;
-        $verifyDepth = (int) $options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH;
-        $cafile = (string) $options['cafile'] ?? null;
-        $name = (string) $options['name'] ?? null;
-        $cn = (string) $options['cn'] ?? $name;
+        $protocol = (string) ($options['protocol'] ?? (null === $port ? 'unix' : 'tcp'));
+        $allowSelfSigned = (bool) ($options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED);
+        $timeout = (float) ($options['timeout'] ?? self::DEFAULT_CONNECT_TIMEOUT);
+        $verifyDepth = (int) ($options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH);
+        $cafile = (string) ($options['cafile'] ?? '');
+        $name = (string) ($options['name'] ?? '');
+        $cn = (string) ($options['cn'] ?? $name);
         
         $context = [];
         
@@ -56,7 +56,7 @@ class DefaultConnector implements Connector
             'honor_cipher_order' => true,
         ];
         
-        if (null !== $cafile) {
+        if ('' !== $cafile) {
             if (!file_exists($cafile)) {
                 throw new InvalidArgumentError('No file exists at path given for cafile.');
             }

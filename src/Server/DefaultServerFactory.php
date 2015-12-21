@@ -27,15 +27,15 @@ class DefaultServerFactory implements ServerFactory
      */
     public function create(string $host, int $port = null, array $options = []): Server
     {
-        $protocol = (string) $options['protocol'] ?? (null === $port ? 'unix' : 'tcp');
-        $queue = (int) $options['backlog'] ?? self::DEFAULT_BACKLOG;
-        $pem = (string) $options['pem'] ?? null;
-        $passphrase = (string) $options['passphrase'] ?? null;
-        $name = (string) $options['name'] ?? null;
+        $protocol = (string) ($options['protocol'] ?? (null === $port ? 'unix' : 'tcp'));
+        $queue = (int) ($options['backlog'] ?? self::DEFAULT_BACKLOG);
+        $pem = (string) ($options['pem'] ?? '');
+        $passphrase = ($options['passphrase'] ?? '');
+        $name = (string) ($options['name'] ?? '');
 
-        $verify = (string) $options['verify_peer'] ?? self::DEFAULT_VERIFY_PEER;
-        $allowSelfSigned = (bool) $options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED;
-        $verifyDepth = (int) $options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH;
+        $verify = (string) ($options['verify_peer'] ?? self::DEFAULT_VERIFY_PEER);
+        $allowSelfSigned = (bool) ($options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED);
+        $verifyDepth = (int) ($options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH);
 
         $context = [];
         
@@ -43,10 +43,10 @@ class DefaultServerFactory implements ServerFactory
         $context['socket']['bindto'] = Socket\makeName($host, $port);
         $context['socket']['backlog'] = $queue;
 
-        $context['socket']['so_reuseaddr'] = (bool) $options['reuseaddr'] ?? false;
-        $context['socket']['so_reuseport'] = (bool) $options['reuseport'] ?? false;
+        $context['socket']['so_reuseaddr'] = (bool) ($options['reuseaddr'] ?? false);
+        $context['socket']['so_reuseport'] = (bool) ($options['reuseport'] ?? false);
         
-        if (null !== $pem) {
+        if ('' !== $pem) {
             if (!file_exists($pem)) {
                 throw new InvalidArgumentError('No file found at given PEM path.');
             }
@@ -65,7 +65,7 @@ class DefaultServerFactory implements ServerFactory
             $context['ssl']['SNI_server_name'] = $name;
             $context['ssl']['peer_name'] = $name;
             
-            if (null !== $passphrase) {
+            if ('' !== $passphrase) {
                 $context['ssl']['passphrase'] = $passphrase;
             }
         }
