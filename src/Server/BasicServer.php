@@ -14,7 +14,7 @@ use Icicle\Loop;
 use Icicle\Loop\Watcher\Io;
 use Icicle\Socket;
 use Icicle\Socket\{Socket as ClientSocket, NetworkSocket};
-use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
+use Icicle\Socket\Exception\{ClosedException, FailureException, UnavailableException};
 use Icicle\Stream\StreamResource;
 
 class BasicServer extends StreamResource implements Server
@@ -90,8 +90,8 @@ class BasicServer extends StreamResource implements Server
      */
     public function accept(): \Generator
     {
-        if (null !== $this->delayed) {
-            throw new BusyError('Already waiting on server.');
+        while (null !== $this->delayed) {
+            yield $this->delayed;
         }
         
         if (!$this->isOpen()) {

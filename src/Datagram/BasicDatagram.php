@@ -14,7 +14,7 @@ use Icicle\Exception\InvalidArgumentError;
 use Icicle\Loop;
 use Icicle\Loop\Watcher\Io;
 use Icicle\Socket;
-use Icicle\Socket\Exception\{BusyError, ClosedException, FailureException, UnavailableException};
+use Icicle\Socket\Exception\{ClosedException, FailureException, UnavailableException};
 use Icicle\Stream\StreamResource;
 use Throwable;
 
@@ -134,8 +134,8 @@ class BasicDatagram extends StreamResource implements Datagram
      */
     public function receive(int $length = 0, float $timeout = 0): \Generator
     {
-        if (null !== $this->delayed) {
-            throw new BusyError('Already waiting on datagram.');
+        while (null !== $this->delayed) {
+            yield $this->delayed;
         }
         
         if (!$this->isOpen()) {

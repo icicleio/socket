@@ -11,6 +11,7 @@ namespace Icicle\Tests\Socket;
 
 use Exception;
 use Icicle\Awaitable;
+use Icicle\Awaitable\Exception\TimeoutException;
 use Icicle\Awaitable\Promise;
 use Icicle\Coroutine\Coroutine;
 use Icicle\Loop;
@@ -19,7 +20,6 @@ use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\NetworkSocket;
 use Icicle\Socket\Socket;
 use Icicle\Stream\Exception\ClosedException;
-use Icicle\Stream\Exception\BusyError;
 use Icicle\Stream\Exception\UnwritableException;
 
 class NetworkSocketTest extends TestCase
@@ -197,7 +197,7 @@ class NetworkSocketTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->isInstanceOf(BusyError::class));
+            ->with($this->isInstanceOf(TimeoutException::class));
 
         $promise->done($this->createCallback(0), $callback);
 
