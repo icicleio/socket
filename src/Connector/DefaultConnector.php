@@ -26,17 +26,13 @@ class DefaultConnector implements Connector
      */
     public function connect(string $ip, int $port = null, array $options = []): \Generator
     {
-        $protocol = isset($options['protocol'])
-            ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
-        $allowSelfSigned = isset($options['allow_self_signed'])
-            ? (bool) $options['allow_self_signed']
-            : self::DEFAULT_ALLOW_SELF_SIGNED;
-        $timeout = isset($options['timeout']) ? (float) $options['timeout'] : self::DEFAULT_CONNECT_TIMEOUT;
-        $verifyDepth = isset($options['verify_depth']) ? (int) $options['verify_depth'] : self::DEFAULT_VERIFY_DEPTH;
-        $cafile = isset($options['cafile']) ? (string) $options['cafile'] : null;
-        $name = isset($options['name']) ? (string) $options['name'] : null;
-        $cn = isset($options['cn']) ? (string) $options['cn'] : $name;
+        $protocol = (string) $options['protocol'] ?? (null === $port ? 'unix' : 'tcp');
+        $allowSelfSigned = (bool) $options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED;
+        $timeout = (float) $options['timeout'] ?? self::DEFAULT_CONNECT_TIMEOUT;
+        $verifyDepth = (int) $options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH;
+        $cafile = (string) $options['cafile'] ?? null;
+        $name = (string) $options['name'] ?? null;
+        $cn = (string) $options['cn'] ?? $name;
         
         $context = [];
         

@@ -27,25 +27,24 @@ class DefaultServerFactory implements ServerFactory
      */
     public function create(string $host, int $port = null, array $options = []): Server
     {
-        $protocol = isset($options['protocol'])
-            ? (string) $options['protocol']
-            : (null === $port ? 'unix' : 'tcp');
-        $queue = isset($options['backlog']) ? (int) $options['backlog'] : self::DEFAULT_BACKLOG;
-        $pem = isset($options['pem']) ? (string) $options['pem'] : null;
-        $passphrase = isset($options['passphrase']) ? (string) $options['passphrase'] : null;
-        $name = isset($options['name']) ? (string) $options['name'] : null;
+        $protocol = (string) $options['protocol'] ?? (null === $port ? 'unix' : 'tcp');
+        $queue = (int) $options['backlog'] ?? self::DEFAULT_BACKLOG;
+        $pem = (string) $options['pem'] ?? null;
+        $passphrase = (string) $options['passphrase'] ?? null;
+        $name = (string) $options['name'] ?? null;
 
-        $verify = isset($options['verify_peer']) ? (string) $options['verify_peer'] : self::DEFAULT_VERIFY_PEER;
-        $allowSelfSigned = isset($options['allow_self_signed'])
-            ? (bool) $options['allow_self_signed']
-            : self::DEFAULT_ALLOW_SELF_SIGNED;
-        $verifyDepth = isset($options['verify_depth']) ? (int) $options['verify_depth'] : self::DEFAULT_VERIFY_DEPTH;
+        $verify = (string) $options['verify_peer'] ?? self::DEFAULT_VERIFY_PEER;
+        $allowSelfSigned = (bool) $options['allow_self_signed'] ?? self::DEFAULT_ALLOW_SELF_SIGNED;
+        $verifyDepth = (int) $options['verify_depth'] ?? self::DEFAULT_VERIFY_DEPTH;
 
         $context = [];
         
         $context['socket'] = [];
         $context['socket']['bindto'] = Socket\makeName($host, $port);
         $context['socket']['backlog'] = $queue;
+
+        $context['socket']['so_reuseaddr'] = (bool) $options['reuseaddr'] ?? false;
+        $context['socket']['so_reuseport'] = (bool) $options['reuseport'] ?? false;
         
         if (null !== $pem) {
             if (!file_exists($pem)) {
