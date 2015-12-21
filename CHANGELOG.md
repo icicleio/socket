@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.2] - 2015-12-21
+### Added
+- Added an `unshift()` method to `Icicle\Socket\Socket` that shifts data back to the front of the stream. The data will be the first data read from any pending on subsequent read.
+
 ## [0.5.1] - 2015-12-20
 ### Changed
 - Simultaneous reads are now allowed on `Icicle\Socket\Datagram\BasicDatagram` and simultaneous accepts are allowed on `Icicle\Socket\Server\BasicServer`, fulfilling in the order they were created. Simultaneous reads/accepts will not fulfill with the same data, rather each is fulfilled independently with new data read from the stream or new client accepted on the server.
@@ -56,6 +60,7 @@
 - Initial release after split from the main [Icicle repository](https://github.com/icicleio/icicle).
 
 
+[0.5.2]: https://github.com/icicleio/socket/releases/tag/v0.5.2
 [0.5.1]: https://github.com/icicleio/socket/releases/tag/v0.5.1
 [0.5.0]: https://github.com/icicleio/socket/releases/tag/v0.5.0
 [0.4.1]: https://github.com/icicleio/socket/releases/tag/v0.4.1

@@ -25,9 +25,8 @@ interface Socket extends DuplexStream, Resource
      *
      * @resolve null
      *
-     * @throws \Icicle\Socket\Exception\BusyError If the client was already busy waiting to read.
      * @throws \Icicle\Socket\Exception\FailureException If enabling crypto fails.
-     * @throws \Icicle\Socket\Exception\ClosedException If the client has been closed.
+     * @throws \Icicle\Stream\Exception\ClosedException If the socket has been closed.
      */
     public function enableCrypto($method, $timeout = 0);
     
@@ -37,7 +36,15 @@ interface Socket extends DuplexStream, Resource
      * @return bool
      */
     public function isCryptoEnabled();
-    
+
+    /**
+     * Shifts the given data back to the front of the socket stream. The data will be the first bytes returned from any
+     * pending or subsequent read.
+     *
+     * @param string $data
+     */
+    public function unshift($data);
+
     /**
      * Returns the remote IP or socket path as a string representation.
      *
