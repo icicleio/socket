@@ -34,7 +34,6 @@ interface Datagram extends Resource
      * @resolve [string, int, string] Array containing the senders remote address, remote port, and data received.
      *
      * @throws \Icicle\Awaitable\Exception\TimeoutException If receiving times out.
-     * @throws \Icicle\Socket\Exception\BusyError If a read was already pending on the datagram.
      * @throws \Icicle\Socket\Exception\UnavailableException If the datagram is no longer readable.
      * @throws \Icicle\Socket\Exception\ClosedException If the datagram has been closed.
      * @throws \Icicle\Socket\Exception\FailureException If receiving fails.

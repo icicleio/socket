@@ -22,7 +22,6 @@ interface Server extends Resource
      *
      * @resolve \Icicle\Socket\Socket
      *
-     * @throws \Icicle\Socket\Exception\BusyError If an accept request was already pending on the server.
      * @throws \Icicle\Socket\Exception\UnavailableException If the server has been closed.
      */
     public function accept();

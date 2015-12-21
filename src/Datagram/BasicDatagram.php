@@ -15,7 +15,6 @@ use Icicle\Awaitable\Exception\TimeoutException;
 use Icicle\Exception\InvalidArgumentError;
 use Icicle\Loop;
 use Icicle\Socket;
-use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
@@ -137,8 +136,8 @@ class BasicDatagram extends StreamResource implements Datagram
      */
     public function receive($length = 0, $timeout = 0)
     {
-        if (null !== $this->delayed) {
-            throw new BusyError('Already waiting on datagram.');
+        while (null !== $this->delayed) {
+            yield $this->delayed;
         }
         
         if (!$this->isOpen()) {

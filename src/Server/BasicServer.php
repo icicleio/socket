@@ -13,7 +13,6 @@ use Icicle\Awaitable\Delayed;
 use Icicle\Loop;
 use Icicle\Socket;
 use Icicle\Socket\NetworkSocket;
-use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\FailureException;
 use Icicle\Socket\Exception\UnavailableException;
@@ -92,8 +91,8 @@ class BasicServer extends StreamResource implements Server
      */
     public function accept()
     {
-        if (null !== $this->delayed) {
-            throw new BusyError('Already waiting on server.');
+        while (null !== $this->delayed) {
+            yield $this->delayed;
         }
         
         if (!$this->isOpen()) {

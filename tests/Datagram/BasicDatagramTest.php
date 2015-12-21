@@ -19,7 +19,6 @@ use Icicle\Loop\SelectLoop;
 use Icicle\Loop\Watcher\Io;
 use Icicle\Socket\Datagram\BasicDatagram;
 use Icicle\Socket\Datagram\Datagram;
-use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Tests\Socket\TestCase;
@@ -229,7 +228,7 @@ class BasicDatagramTest extends TestCase
 
         $promise2 = new Coroutine($this->datagram->receive());
 
-        $callback = $this->createCallback(1);
+        $callback = $this->createCallback(2);
         $callback->method('__invoke')
             ->will($this->returnCallback(function ($data) {
                 list($address, $port, $message) = $data;
@@ -240,12 +239,13 @@ class BasicDatagramTest extends TestCase
             }));
 
         $promise1->done($callback);
+        $promise2->done($callback);
 
-        $callback = $this->createCallback(1);
-        $callback->method('__invoke')
-            ->with($this->isInstanceof(BusyError::class));
-
-        $promise2->done($this->createCallback(0), $callback);
+        Loop\timer(self::TIMEOUT, function () use ($client) {
+            if (0 >= stream_socket_sendto($client, self::WRITE_STRING)) {
+                $this->fail('Could not write to datagram.');
+            }
+        });
 
         Loop\run();
     }

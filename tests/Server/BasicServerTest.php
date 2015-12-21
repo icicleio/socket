@@ -15,7 +15,6 @@ use Icicle\Loop;
 use Icicle\Loop\Loop as LoopInterface;
 use Icicle\Loop\SelectLoop;
 use Icicle\Loop\Watcher\Io;
-use Icicle\Socket\Exception\BusyError;
 use Icicle\Socket\Exception\ClosedException;
 use Icicle\Socket\Exception\UnavailableException;
 use Icicle\Socket\Server\BasicServer;
@@ -210,18 +209,24 @@ class BasicServerTest extends TestCase
             STREAM_CLIENT_CONNECT
         );
         
-        $callback = $this->createCallback(1);
+        $callback = $this->createCallback(2);
         $callback->method('__invoke')
-                 ->with($this->isInstanceOf(Socket::class));
+            ->with($this->isInstanceOf(Socket::class));
         
         $promise1->done($callback);
-        
-        $callback = $this->createCallback(1);
-        $callback->method('__invoke')
-                 ->with($this->isInstanceOf(BusyError::class));
-        
-        $promise2->done($this->createCallback(0), $callback);
-        
+        $promise2->done($callback);
+
+        Loop\timer(self::TIMEOUT, function () {
+            $client = stream_socket_client(
+                'tcp://' . self::HOST_IPv4 . ':' . self::PORT,
+                $errno,
+                $errstr,
+                self::CONNECT_TIMEOUT,
+                STREAM_CLIENT_CONNECT
+            );
+            fclose($client);
+        });
+
         Loop\run();
 
         fclose($client);
