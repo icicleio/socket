@@ -101,6 +101,8 @@ Loop\run();
 - [Socket](#socket)
     - [NetworkSocket Constructor](#networksocket-constructor) - Creates a socket object from a stream socket resource.
     - [enableCrypto()](#enablecrypto) - Enables crypto on the socket.
+    - [isCryptoEnabled()](#iscryptoenabled) - Determines if crypto is enabled on the socket.
+    - [unshift()](#unshift) - Shifts data back to the front of the socket stream.
     - [getLocalAddress()](#getlocaladdress) - Returns the local address of the socket.
     - [getLocalPort()](#getlocalport) - Returns the local port of the socket.
     - [getRemoteAddress()](#getremoteaddress) - Returns the remote address of the socket.
@@ -222,6 +224,26 @@ Socket::enableCrypto(int $method, float $timeout = 0): \Generator
 ```
 
 Enables encryption on the socket. For Socket objects created from `Icicle\Socket\Server\Server::accept()`, a PEM file must have been provided when creating the server socket (see `Icicle\Socket\Server\ServerFactory`). Use the `STREAM_CRYPTO_METHOD_*_SERVER` constants when enabling crypto on remote clients (e.g., created by `Icicle\Socket\Server\Server::accept()`) and the `STREAM_CRYPTO_METHOD_*_CLIENT` constants when enabling crypto on a local client connection (e.g., created by `Icicle\Socket\Connector\Connector::connect()`).
+
+---
+
+#### isCryptoEnabled()
+
+```php
+Socket::isCryptoEnabled(): bool
+```
+
+Determines if encryption is enabled on the socket.
+
+---
+
+#### unshift()
+
+```php
+Socket::unshift(string $data): void
+```
+
+Determines if encryption is enabled on the socket.
 
 ---
 
