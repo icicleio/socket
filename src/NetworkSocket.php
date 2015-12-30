@@ -41,10 +41,11 @@ class NetworkSocket extends DuplexPipe implements Socket
     
     /**
      * @param resource $socket Stream socket resource.
+     * @param bool $autoClose True to close the resource on destruct, false to leave it open.
      */
-    public function __construct($socket)
+    public function __construct($socket, bool $autoClose = true)
     {
-        parent::__construct($socket);
+        parent::__construct($socket, $autoClose);
         
         try {
             list($this->remoteAddress, $this->remotePort) = getName($socket, true);

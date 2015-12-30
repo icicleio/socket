@@ -196,7 +196,7 @@ class BasicDatagramTest extends TestCase
 
         $callback = $this->createCallback(1);
         $callback->method('__invoke')
-            ->with($this->identicalTo(''));
+            ->with($this->identicalTo(null));
 
         $promise->done($callback);
 
