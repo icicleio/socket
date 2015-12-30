@@ -117,7 +117,7 @@ class BasicServer extends StreamResource implements Server
         $socket = @stream_socket_accept($this->getResource(), 0); // Timeout of 0 to be non-blocking.
 
         if ($socket) {
-            yield $this->createSocket($socket);
+            yield $this->createSocket($socket, $autoClose);
             return;
         }
 

@@ -278,7 +278,7 @@ class BasicDatagram extends StreamResource implements Datagram
     {
         $length = &$this->length;
 
-        return Loop\poll($this->getResource(), static function ($resource, $expired) use (&$length, $readQueue) {
+        return Loop\poll($resource, static function ($resource, $expired) use (&$length, $readQueue) {
             /** @var \Icicle\Awaitable\Delayed $delayed */
             $delayed = $readQueue->shift();
 
