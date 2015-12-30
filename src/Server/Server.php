@@ -18,13 +18,15 @@ interface Server extends Resource
      *
      * Accepts incoming client connections.
      *
+     * @param bool $autoClose True to create the returned Socket with auto close enabled, false to disable.
+     *
      * @return \Generator
      *
      * @resolve \Icicle\Socket\Socket
      *
      * @throws \Icicle\Socket\Exception\UnavailableException If the server has been closed.
      */
-    public function accept();
+    public function accept($autoClose = true);
     
     /**
      * Returns the IP address or socket path on which the server is listening.

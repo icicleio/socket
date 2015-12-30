@@ -11,6 +11,7 @@ namespace Icicle\Socket\Server;
 
 use Icicle\Awaitable\Delayed;
 use Icicle\Loop;
+use Icicle\Loop\Watcher\Io;
 use Icicle\Socket;
 use Icicle\Socket\NetworkSocket;
 use Icicle\Socket\Exception\ClosedException;
@@ -35,9 +36,9 @@ class BasicServer extends StreamResource implements Server
     private $port;
     
     /**
-     * @var \Icicle\Awaitable\Delayed
+     * @var \SplQueue
      */
-    private $delayed;
+    private $queue;
     
     /**
      * @var \Icicle\Loop\Watcher\Io
@@ -46,12 +47,15 @@ class BasicServer extends StreamResource implements Server
     
     /**
      * @param resource $socket
+     * @param bool $autoClose True to close the resource on destruct, false to leave it open.
      */
-    public function __construct($socket)
+    public function __construct($socket, $autoClose = true)
     {
-        parent::__construct($socket);
+        parent::__construct($socket, $autoClose);
 
-        $this->poll = $this->createPoll();
+        $this->queue = new \SplQueue();
+
+        $this->poll = $this->createPoll($socket, $this->queue);
 
         try {
             list($this->address, $this->port) = Socket\getName($socket, false);
@@ -59,12 +63,22 @@ class BasicServer extends StreamResource implements Server
             $this->close();
         }
     }
-    
+
+    /**
+     * Frees resources associated with this object from the loop.
+     */
+    public function __destruct()
+    {
+        parent::__destruct();
+        $this->free();
+    }
+
     /**
      * {@inheritdoc}
      */
     public function close()
     {
+        parent::close();
         $this->free();
     }
 
@@ -77,22 +91,22 @@ class BasicServer extends StreamResource implements Server
     {
         $this->poll->free();
 
-        if (null !== $this->delayed) {
-            $this->delayed->cancel(
-                $exception ?: new ClosedException('The server was unexpectedly closed.')
-            );
+        while (!$this->queue->isEmpty()) {
+            /** @var \Icicle\Awaitable\Delayed $delayed */
+            $delayed = $this->queue->shift();
+            $delayed->reject($exception ?: new ClosedException('The server was unexpectedly closed.'));
         }
-
-        parent::close();
     }
     
     /**
      * {@inheritdoc}
      */
-    public function accept()
+    public function accept($autoClose = true)
     {
-        while (null !== $this->delayed) {
-            yield $this->delayed;
+        while (!$this->queue->isEmpty()) {
+            /** @var \Icicle\Awaitable\Delayed $delayed */
+            $delayed = $this->queue->bottom();
+            yield $delayed; // Wait for previous accept to complete.
         }
         
         if (!$this->isOpen()) {
@@ -107,17 +121,17 @@ class BasicServer extends StreamResource implements Server
             return;
         }
 
+        $this->queue->push($delayed = new Delayed());
         $this->poll->listen();
-        
-        $this->delayed = new Delayed();
 
         try {
-            yield $this->delayed;
+            yield $this->createSocket((yield $delayed), $autoClose);
         } catch (\Exception $exception) {
-            $this->poll->cancel();
+            if ($this->poll->isPending()) {
+                $this->poll->cancel();
+                $this->queue->shift();
+            }
             throw $exception;
-        } finally {
-            $this->delayed = null;
         }
     }
     
@@ -145,7 +159,7 @@ class BasicServer extends StreamResource implements Server
         $pending = $this->poll->isPending();
         $this->poll->free();
 
-        $this->poll = $this->createPoll();
+        $this->poll = $this->createPoll($this->getResource(), $this->queue);
 
         if ($pending) {
             $this->poll->listen();
@@ -154,34 +168,36 @@ class BasicServer extends StreamResource implements Server
 
     /**
      * @param resource $socket Stream socket resource.
+     * @param bool $autoClose
      *
      * @return \Icicle\Socket\Socket
      */
-    protected function createSocket($socket)
+    protected function createSocket($socket, $autoClose = true)
     {
-        return new NetworkSocket($socket);
+        return new NetworkSocket($socket, $autoClose);
     }
 
     /**
+     * @param resource $resource
+     * @param \SplQueue $queue
+     *
      * @return \Icicle\Loop\Watcher\Io
      */
-    private function createPoll()
+    private function createPoll($resource, \SplQueue $queue)
     {
-        return Loop\poll($this->getResource(), function ($resource) {
+        return Loop\poll($resource, static function ($resource, $expired, Io $poll) use ($queue) {
             // Error reporting suppressed since stream_socket_accept() emits E_WARNING on client accept failure.
             $socket = @stream_socket_accept($resource, 0); // Timeout of 0 to be non-blocking.
 
             // Having difficulty finding a test to cover this scenario, but it has been seen in production.
             if (!$socket) {
-                $this->poll->listen(); // Accept failed, let's go around again.
+                $poll->listen(); // Accept failed, let's go around again.
                 return;
             }
 
-            try {
-                $this->delayed->resolve($this->createSocket($socket));
-            } catch (\Exception $exception) {
-                $this->delayed->reject($exception);
-            }
+            /** @var \Icicle\Awaitable\Delayed $delayed */
+            $delayed = $queue->shift();
+            $delayed->resolve($socket);
         });
     }
 }
