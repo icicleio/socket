@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.3] - 2015-12-29
+### Added
+- `Icicle\Socket\NetworkSocket`, `Icicle\Socket\Server\BasicServer`, and `Icicle\Socket\Datagram\BasicDatagram` will automatically free resources in the event loop associated with the server/datagram and call `fclose()` on the stream resource when the object is destructed. This means `close()` does not need to be called on the object to avoid memory leaks in the loop or close the resource. The constructors of these classes have an additional boolean parameter `$autoClose` that defaults to `true`, but can be set to `false` to avoid automatically calling `fclose()` on the resource.
+
 ## [0.5.2] - 2015-12-21
 ### Added
 - Added an `unshift()` method to `Icicle\Socket\Socket` that shifts data back to the front of the stream. The data will be the first data read from any pending on subsequent read.
@@ -60,6 +64,7 @@
 - Initial release after split from the main [Icicle repository](https://github.com/icicleio/icicle).
 
 
+[0.5.3]: https://github.com/icicleio/socket/releases/tag/v0.5.3
 [0.5.2]: https://github.com/icicleio/socket/releases/tag/v0.5.2
 [0.5.1]: https://github.com/icicleio/socket/releases/tag/v0.5.1
 [0.5.0]: https://github.com/icicleio/socket/releases/tag/v0.5.0
