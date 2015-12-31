@@ -19,6 +19,8 @@ class DefaultDatagramFactory implements DatagramFactory
      */
     public function create($host, $port = null, array $options = [])
     {
+        $autoClose = isset($options['auto_close']) ? (bool) $options['auto_close'] : true;
+
         $context = [];
         
         $context['socket'] = [];
@@ -36,6 +38,6 @@ class DefaultDatagramFactory implements DatagramFactory
             );
         }
         
-        return new BasicDatagram($socket);
+        return new BasicDatagram($socket, $autoClose);
     }
 }

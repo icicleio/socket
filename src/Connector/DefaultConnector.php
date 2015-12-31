@@ -9,9 +9,10 @@
 
 namespace Icicle\Socket\Connector;
 
-use Icicle\Loop;
 use Icicle\Awaitable\Delayed;
 use Icicle\Awaitable\Exception\TimeoutException;
+use Icicle\Loop;
+use Icicle\Loop\Watcher\Io;
 use Icicle\Exception\InvalidArgumentError;
 use Icicle\Socket;
 use Icicle\Socket\NetworkSocket;
@@ -31,6 +32,7 @@ class DefaultConnector implements Connector
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
             : (null === $port ? 'unix' : 'tcp');
+        $autoClose = isset($options['auto_close']) ? (bool) $options['auto_close'] : true;
         $allowSelfSigned = isset($options['allow_self_signed'])
             ? (bool) $options['allow_self_signed']
             : self::DEFAULT_ALLOW_SELF_SIGNED;
@@ -90,8 +92,7 @@ class DefaultConnector implements Connector
 
         $delayed = new Delayed();
 
-        $await = Loop\await($socket, function ($resource, $expired) use (&$await, $delayed) {
-            /** @var \Icicle\Loop\Watcher\Io $await */
+        $await = Loop\await($socket, function ($resource, $expired, Io $await) use ($delayed, $autoClose) {
             $await->free();
 
             if ($expired) {
@@ -99,7 +100,7 @@ class DefaultConnector implements Connector
                 return;
             }
 
-            $delayed->resolve(new NetworkSocket($resource));
+            $delayed->resolve(new NetworkSocket($resource, $autoClose));
         });
 
         $await->listen($timeout);

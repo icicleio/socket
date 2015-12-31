@@ -30,6 +30,7 @@ class DefaultServerFactory implements ServerFactory
         $protocol = isset($options['protocol'])
             ? (string) $options['protocol']
             : (null === $port ? 'unix' : 'tcp');
+        $autoClose = isset($options['auto_close']) ? (bool) $options['auto_close'] : true;
         $queue = isset($options['backlog']) ? (int) $options['backlog'] : self::DEFAULT_BACKLOG;
         $pem = isset($options['pem']) ? (string) $options['pem'] : null;
         $passphrase = isset($options['passphrase']) ? (string) $options['passphrase'] : null;
@@ -81,6 +82,6 @@ class DefaultServerFactory implements ServerFactory
             throw new FailureException(sprintf('Could not create server %s: Errno: %d; %s', $uri, $errno, $errstr));
         }
         
-        return new BasicServer($socket);
+        return new BasicServer($socket, $autoClose);
     }
 }
