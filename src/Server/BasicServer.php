@@ -42,6 +42,11 @@ class BasicServer extends StreamResource implements Server
      * @var \Icicle\Loop\Watcher\Io
      */
     private $poll;
+
+    /**
+     * @var \Closure
+     */
+    private $onCancelled;
     
     /**
      * @param resource $socket
@@ -54,6 +59,11 @@ class BasicServer extends StreamResource implements Server
         $this->queue = new \SplQueue();
 
         $this->poll = $this->createPoll($socket, $this->queue);
+
+        $this->onCancelled = function () {
+            $this->poll->cancel();
+            $this->queue->shift();
+        };
 
         try {
             list($this->address, $this->port) = Socket\getName($socket, false);
@@ -118,18 +128,10 @@ class BasicServer extends StreamResource implements Server
             return $this->createSocket($socket, $autoClose);
         }
 
-        $this->queue->push($delayed = new Delayed());
+        $this->queue->push($delayed = new Delayed($this->onCancelled));
         $this->poll->listen();
 
-        try {
-            return $this->createSocket(yield $delayed, $autoClose);
-        } catch (\Throwable $exception) {
-            if ($this->poll->isPending()) {
-                $this->poll->cancel();
-                $this->queue->shift();
-            }
-            throw $exception;
-        }
+        return $this->createSocket(yield $delayed, $autoClose);
     }
     
     /**

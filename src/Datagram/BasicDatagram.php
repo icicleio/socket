@@ -51,6 +51,16 @@ class BasicDatagram extends StreamResource implements Datagram
      * @var \SplQueue
      */
     private $writeQueue;
+
+    /**
+     * @var \Closure
+     */
+    private $onReceiveCancelled;
+
+    /**
+     * @var \Closure
+     */
+    private $onSendCancelled;
     
     /**
      * @var int
@@ -74,6 +84,15 @@ class BasicDatagram extends StreamResource implements Datagram
 
         $this->poll = $this->createPoll($socket, $this->readQueue);
         $this->await = $this->createAwait($socket, $this->writeQueue);
+
+        $this->onReceiveCancelled = function () {
+            $this->poll->cancel();
+            $this->readQueue->shift();
+        };
+
+        $this->onSendCancelled = function (\Exception $exception) {
+            $this->free($exception);
+        };
 
         try {
             list($this->address, $this->port) = Socket\getName($socket, false);
@@ -122,7 +141,7 @@ class BasicDatagram extends StreamResource implements Datagram
         while (!$this->writeQueue->isEmpty()) {
             /** @var \Icicle\Awaitable\Delayed $delayed */
             list( , , , $delayed) = $this->writeQueue->shift();
-            $delayed->cancel(
+            $delayed->reject(
                 $exception = $exception ?: new ClosedException('The datagram was unexpectedly closed.')
             );
         }
@@ -166,18 +185,10 @@ class BasicDatagram extends StreamResource implements Datagram
             $this->length = self::MAX_PACKET_SIZE;
         }
 
-        $this->readQueue->push($delayed = new Delayed());
+        $this->readQueue->push($delayed = new Delayed($this->onReceiveCancelled));
         $this->poll->listen($timeout);
 
-        try {
-            return yield $delayed;
-        } catch (Throwable $exception) {
-            if ($this->poll->isPending()) {
-                $this->poll->cancel();
-                $this->readQueue->shift();
-            }
-            throw $exception;
-        }
+        return yield $delayed;
     }
 
     /**
@@ -217,15 +228,15 @@ class BasicDatagram extends StreamResource implements Datagram
             $data = substr($data, $written);
         }
 
-        $delayed = new Delayed();
-        $this->writeQueue->push([$data, $written, $peer, $delayed]);
-
         if (null === $this->await) {
             $this->await = $this->createAwait($this->getResource(), $this->writeQueue);
             $this->await->listen();
         } elseif (!$this->await->isPending()) {
             $this->await->listen();
         }
+
+        $delayed = new Delayed($this->onSendCancelled);
+        $this->writeQueue->push([$data, $written, $peer, $delayed]);
 
         try {
             return yield $delayed;

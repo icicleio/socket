@@ -28,6 +28,7 @@ class DefaultServerFactory implements ServerFactory
     public function create(string $host, int $port = null, array $options = []): Server
     {
         $protocol = (string) ($options['protocol'] ?? (null === $port ? 'unix' : 'tcp'));
+        $autoClose = (bool) ($options['auto_close'] ?? true);
         $queue = (int) ($options['backlog'] ?? self::DEFAULT_BACKLOG);
         $pem = (string) ($options['pem'] ?? '');
         $passphrase = ($options['passphrase'] ?? '');
@@ -80,6 +81,6 @@ class DefaultServerFactory implements ServerFactory
             throw new FailureException(sprintf('Could not create server %s: Errno: %d; %s', $uri, $errno, $errstr));
         }
         
-        return new BasicServer($socket);
+        return new BasicServer($socket, $autoClose);
     }
 }
