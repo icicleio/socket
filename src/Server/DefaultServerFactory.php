@@ -44,29 +44,29 @@ class DefaultServerFactory implements ServerFactory
 
         $context = [];
         
-        $context['socket'] = [];
-        $context['socket']['bindto'] = Socket\makeName($host, $port);
-        $context['socket']['backlog'] = $queue;
+        $context['socket'] = [
+            'bindto' => Socket\makeName($host, $port),
+            'backlog' => $queue,
+            'ipv6_v6only' => true,
+        ];
         
         if (null !== $pem) {
             if (!file_exists($pem)) {
                 throw new InvalidArgumentError('No file found at given PEM path.');
             }
             
-            $context['ssl'] = [];
+            $context['ssl'] = [
+                'verify_peer' => $verify,
+                'verify_peer_name' => $verify,
+                'allow_self_signed' => $allowSelfSigned,
+                'verify_depth' => $verifyDepth,
+                'local_cert' => $pem,
+                'disable_compression' => true,
+                'SNI_enabled' => true,
+                'SNI_server_name' => $name,
+                'peer_name' => $name,
+            ];
 
-            $context['ssl']['verify_peer'] = $verify;
-            $context['ssl']['verify_peer_name'] = $verify;
-            $context['ssl']['allow_self_signed'] = $allowSelfSigned;
-            $context['ssl']['verify_depth'] = $verifyDepth;
-
-            $context['ssl']['local_cert'] = $pem;
-            $context['ssl']['disable_compression'] = true;
-
-            $context['ssl']['SNI_enabled'] = true;
-            $context['ssl']['SNI_server_name'] = $name;
-            $context['ssl']['peer_name'] = $name;
-            
             if (null !== $passphrase) {
                 $context['ssl']['passphrase'] = $passphrase;
             }
