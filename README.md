@@ -69,15 +69,15 @@ $generator = function (Server $server) {
         $data .= "\r\n";
         $data .= $message;
 
-        yield $client->write($data);
+        yield $socket->write($data);
 
-        $client->close();
+        $socket->close();
     };
 
     while ($server->isOpen()) {
         // Handle client in a separate coroutine so this coroutine is not blocked.
         $coroutine = new Coroutine($generator(yield $server->accept()));
-        $coroutine->done(null, function (Exception $exception) {
+        $coroutine->done(null, function ($exception) {
             printf("Client error: %s\n", $exception->getMessage());
         });
     }
